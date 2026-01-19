@@ -1,0 +1,8 @@
+# Lean / Lake
+.lake/
+lake-packages/
+build/
+
+# Editors
+.vscode/
+.DS_Store
