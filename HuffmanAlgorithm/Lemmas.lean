@@ -87,7 +87,7 @@ lemma exists_at_height {α} [DecidableEq α] (t : HuffmanTree α) :
   | leaf w x => aesop (add norm[depth,height, alphabet])
   | node w t1 t2 h1 h2 =>
       simp[alphabet,height,depth]
-      grind[mem_inter_empty,consistent,alphabet,height,depth]
+      grind[mem_inter_empty,consistent]
 
 lemma depth_max_height_left {α} [DecidableEq α]
   (t1 t2 : HuffmanTree α) (a : α)
@@ -145,19 +145,13 @@ lemma notin_alphabetF_imp_freqF_0 {α} [DecidableEq α] (a : α) (ts : Forest α
 lemma freq_0_right {α} [DecidableEq α] (a : α) (t1 t2 : HuffmanTree α)
   (h_disj : alphabet t1 ∩ alphabet t2 = ∅) (h_a_t1 : a ∈ alphabet t1) :
   freq t2 a = 0 := by
-  apply notin_alphabet_imp_freq_0
-  intro h_a_t2
-  have h := Finset.mem_inter_of_mem h_a_t1 h_a_t2
-  simp [h_disj] at h
+  grind[notin_alphabet_imp_freq_0,not_mem_inter_empty]
 
 @[simp]
 lemma freq_0_left {α} [DecidableEq α] (a : α) (t1 t2 : HuffmanTree α)
   (h_disj : alphabet t1 ∩ alphabet t2 = ∅) (h_a_t2 : a ∈ alphabet t2) :
   freq t1 a = 0 := by
-  apply notin_alphabet_imp_freq_0
-  intro h_a_t1
-  have h := Finset.mem_inter_of_mem h_a_t1 h_a_t2
-  simp [h_disj] at h
+  grind[notin_alphabet_imp_freq_0, not_mem_inter_empty]
 
 lemma heightF_0_imp_Leaf_freqF_in_set {α} [DecidableEq α] (ts : Forest α) (a : α) :
   consistentF ts →
@@ -384,11 +378,8 @@ lemma consistent_huffman {α} [DecidableEq α] (ts : Forest α) (h : ts ≠ []) 
   induction ts, h using huffman.induct with
   | case1 t h1 h2 => simp [consistentF, huffman]
   | case2 t1 t2 ts h1 h2 ih =>
-      simp [consistentF] at ih
-      simp [huffman, consistentF, alphabetF]
-      intro h_disj h_consistent_t1 h_disj_2_ts h_consistent_t2 h_consistent_ts
-      simp [Finset.inter_union_distrib_left] at h_disj
-      grind[consistent_uniteTrees, consistent]
+      simp [consistentF, alphabetF, Finset.inter_union_distrib_left] at ih ⊢
+      grind[consistent_uniteTrees, consistent,huffman,consistentF]
 
 @[simp]
 lemma freq_huffman {α} [DecidableEq α] (ts : Forest α) (a : α) (h : ts ≠ []) :
@@ -568,9 +559,7 @@ lemma consistent_swapLeaves {α} [DecidableEq α]
   | leaf wc c =>
       aesop (add norm [swapLeaves])
   | node w t1 t2 ih1 ih2 =>
-      intro h_consistent
-      let ⟨h_disj, h_consistent_t1, h_consistent_t2⟩ := h_consistent
-      simp [consistent, ih1, ih2, swapLeaves, h_consistent_t1, h_consistent_t2]
+      simp [consistent,swapLeaves]
       grind [mem_inter_empty]
 
 @[simp]
@@ -600,9 +589,7 @@ lemma freq_swapLeaves {α} [DecidableEq α]
   induction t with
   | leaf w x => aesop (add norm [freq, alphabet, swapLeaves])
   | node w t1 t2 ih1 ih2 =>
-      let ⟨h_disj, h_consistent_t1, h_consistent_t2⟩ := h_consistent
-      simp [freq, swapLeaves, alphabet, ih1, ih2, h_consistent_t1, h_consistent_t2]
-      grind[mem_inter_empty]
+      grind[freq, swapLeaves, alphabet,mem_inter_empty,consistent]
 
 @[simp]
 lemma weight_swapLeaves {α} [DecidableEq α]

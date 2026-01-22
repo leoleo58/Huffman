@@ -135,7 +135,7 @@ lemma sibling_swapFourSyms_when_4th_is_sibling {α} [DecidableEq α]
           · set t1 := swapLeaves t (freq t a) a (freq t c) c with ht1
             have h_consistent1 : consistent t1 := by simp [t1, h_consistent]
             by_cases hsib1b : sibling t1 a = b
-            · have hfreq1 : freq t1 b = freq t b := by grind[freq_swapLeaves]
+            · have h_freq1 : freq t1 b = freq t b := by grind[freq_swapLeaves]
               grind[swapLeaves_id, sibling_sibling_id,swapSyms,swapFourSyms]
             · have htemp : sibling (swapSyms t1 b (sibling t1 a)) (sibling t1 (sibling t1 a)) = b :=
                 sibling_swapSyms_other_sibling t1 b (sibling t1 a)
@@ -187,16 +187,9 @@ lemma consistent_mergeSibling {α} [DecidableEq α]
   (t : HuffmanTree α) (a : α) :
   consistent t → consistent (mergeSibling t a) := by
   intro hc
-  induction a, hc using sibling_induct_consistent with
-  | leaf w b hc => simp [mergeSibling, consistent]
-  | step1 w wb b wc c hc h =>
-      aesop (add norm [consistent, mergeSibling, alphabet])
-  | step21 w t1 t2 hc hc1 hc2 hd hh ha1 h1 ha2 h2 h3
-  | step22 w t1 t2 hc hc1 hc2 hd hh ha1 h1 ha2 h2 h3 =>
-      simp [hh, consistent, h3]
-      grind[alphabet_mergeSibling,notin_alphabet_imp_mergeSibling_id, consistent,mergeSibling]
-  | step23 w t1 t2 hc hc1 hc2 hd hh ha1 ha2 =>
-      aesop (add norm [consistent, mergeSibling, alphabet])
+  induction a, hc using sibling_induct_consistent <;>
+  grind[either_height_gt_0_imp_mergeSibling, alphabet_mergeSibling,
+        notin_alphabet_imp_mergeSibling_id, consistent, mergeSibling, alphabet]
 
 @[simp]
 lemma freq_mergesibling {α} [DecidableEq α]
@@ -206,16 +199,12 @@ lemma freq_mergesibling {α} [DecidableEq α]
   fun c => if c = a then freq t a + freq t (sibling t a)
             else if c = sibling t a then 0
             else freq t c := by
-  induction a, h_consistent using sibling_induct_consistent with
-  | leaf w b hc => simp [sibling] at h_sib
-  | step1 w wb b wc c hc h =>
-      grind[mergeSibling, freq, sibling, consistent, alphabet]
-  | step21 w t1 t2 hc hc1 hc2 hd hh ha1 h1 ha2 h2 h3
-  | step22 w t1 t2 hc hc1 hc2 hd hh ha1 h1 ha2 h2 h3 =>
-      ext x
-      aesop (add norm[mergeSibling, freq, sibling])
-  | step23 w t1 t2 hc hc1 hc2 hd hh ha1 ha2 =>
-      grind[alphabet]
+  induction a, h_consistent using sibling_induct_consistent <;>
+    grind[freq, alphabet, consistent, mergeSibling, sibling,
+          notin_alphabet_imp_freq_0,
+          notin_alphabet_imp_mergeSibling_id,
+          either_height_gt_0_imp_sibling,
+          either_height_gt_0_imp_mergeSibling]
 
 @[simp]
 lemma weight_mergeSibling {α} [DecidableEq α]
@@ -228,20 +217,11 @@ lemma cost_mergeSibling {α} [DecidableEq α]
   (t : HuffmanTree α) (a : α)
   (h_consistent : consistent t) (h_sib : sibling t a ≠ a) :
   cost (mergeSibling t a) + freq t a + freq t (sibling t a) = cost t := by
-  induction a, h_consistent using sibling_induct_consistent with
-  | leaf w b hc => simp [sibling] at h_sib
-  | step1 w wb b wc c hc h =>
-      grind [mergeSibling, cost, freq, weight, sibling, consistent, alphabet]
-  | step21 w t1 t2 hc hc1 hc2 hd hh ha1 h1 ha2 h2 h3 =>
-      simp [cost, freq, either_height_gt_0_imp_mergeSibling t1 t2 a w hh]
-      grind[notin_alphabet_imp_mergeSibling_id,either_height_gt_0_imp_sibling,
-            notin_alphabet_imp_freq_0,sibling]
-  | step22 w t1 t2 hc hc1 hc2 hd hh ha1 h1 ha2 h2 h3 =>
-      simp [cost, freq, either_height_gt_0_imp_mergeSibling t1 t2 a w hh]
-      grind[notin_alphabet_imp_mergeSibling_id,either_height_gt_0_imp_sibling,
-            notin_alphabet_imp_freq_0,sibling]
-  | step23 w t1 t2 hc hc1 hc2 hd hh ha1 ha2 =>
-      aesop (add norm [cost, freq, mergeSibling])
+  induction a, h_consistent using sibling_induct_consistent <;>
+  grind[mergeSibling, cost, freq,weight, sibling, consistent, alphabet,
+        weight_mergeSibling,notin_alphabet_imp_sibling_id,
+        notin_alphabet_imp_mergeSibling_id,either_height_gt_0_imp_sibling,
+        notin_alphabet_imp_freq_0,sibling,either_height_gt_0_imp_mergeSibling]
 
 /-
 SplitLeaf
@@ -269,8 +249,7 @@ lemma consistent_splitLeaf {α} [DecidableEq α] (t : HuffmanTree α) (wa wb : N
   induction t with
   | leaf w x => grind [splitLeaf,consistent, alphabet]
   | node w t1 t2 ih1 ih2 =>
-      simp [splitLeaf, consistent]
-      grind[mem_inter_empty,alphabet,consistent]
+      grind[mem_inter_empty,alphabet,consistent,splitLeaf,alphabet_splitLeaf]
 
 @[simp]
 lemma freq_splitLeaf {α} [DecidableEq α] (t : HuffmanTree α)
@@ -293,15 +272,15 @@ lemma weight_splitLeaf {α} [DecidableEq α] (t : HuffmanTree α) (wa wb : Nat) 
 lemma cost_splitLeaf {α} [DecidableEq α] (t : HuffmanTree α) (wa wb : Nat) (a b : α) :
   consistent t → a ∈ alphabet t → freq t a = wa + wb →
   cost (splitLeaf t wa a wb b) = cost t + wa + wb := by
-  intro hc ha hf
-  induction a, hc using huffmanTree_induct_consistent with
-  | leaf wb b hc => grind [splitLeaf, cost, alphabet, freq,weight]
-  | left w t1 t2 hc hc1 hc2 hd ha1 ha2 h1 h2 =>
-      have h3 := notin_alphabet_imp_freq_0 a t2 ha2
-      simp [freq, h3] at hf
-      simp [ha1, hf] at h1
-      have h4 := weight_splitLeaf (HuffmanTree.node w t1 t2) wa wb a b hc ha
-      simp [freq, h3, hf, weight,splitLeaf] at h4
+  intro h_consistent h_alphabet h_freq
+  induction a, h_consistent using huffmanTree_induct_consistent with
+  | leaf wb b h_consistent => grind [splitLeaf, cost, alphabet, freq,weight]
+  | left w t1 t2 h_consistent h_consistent1 h_consistent2 hd h_alphabet1 h_alphabet2 h1 h2 =>
+      have h3 := notin_alphabet_imp_freq_0 a t2 h_alphabet2
+      simp [freq, h3] at h_freq
+      simp [h_alphabet1, h_freq] at h1
+      have h4 := weight_splitLeaf (HuffmanTree.node w t1 t2) wa wb a b h_consistent h_alphabet
+      simp [freq, h3, h_freq, weight,splitLeaf] at h4
       simp [cost, splitLeaf, h1]
       calc
         weight (splitLeaf t1 wa a wb b) + (cost t1 + wa + wb) +
@@ -311,12 +290,12 @@ lemma cost_splitLeaf {α} [DecidableEq α] (t : HuffmanTree α) (wa wb : Nat) (a
         _ = weight t1 + weight t2 + cost t1 + wa + wb + cost t2 := by
             aesop (add norm [h4, cost, weight, splitLeaf])
         _ = weight t1 + cost t1 + weight t2 + cost t2 + wa + wb := by ring
-  | right w t1 t2 hc hc1 hc2 hd ha1 ha2 h1 h2 =>
-      have h3 := notin_alphabet_imp_freq_0 a t1 ha1
-      simp [freq, h3] at hf
-      simp [ha2, hf] at h2
-      have h4 := weight_splitLeaf (HuffmanTree.node w t1 t2) wa wb a b hc ha
-      simp [freq, h3, hf, weight,splitLeaf] at h4
+  | right w t1 t2 h_consistent h_consistent1 h_consistent2 hd h_alphabet1 h_alphabet2 h1 h2 =>
+      have h3 := notin_alphabet_imp_freq_0 a t1 h_alphabet1
+      simp [freq, h3] at h_freq
+      simp [h_alphabet2, h_freq] at h2
+      have h4 := weight_splitLeaf (HuffmanTree.node w t1 t2) wa wb a b h_consistent h_alphabet
+      simp [freq, h3, h_freq, weight,splitLeaf] at h4
       simp [cost, splitLeaf, h2]
       calc
         weight (splitLeaf t1 wa a wb b) + cost (splitLeaf t1 wa a wb b) +
@@ -326,8 +305,38 @@ lemma cost_splitLeaf {α} [DecidableEq α] (t : HuffmanTree α) (wa wb : Nat) (a
         _ = weight t1 + weight t2 + cost t1 + cost t2 + wa + wb := by
             aesop (add norm [h4, cost, weight, splitLeaf])
         _ = weight t1 + cost t1 + weight t2 + cost t2 + wa + wb := by ring
-  | none w t1 t2 hc hc1 hc2 hd ha1 ha2 h1 h2 =>
-      aesop(add norm [alphabet, ha1, ha2])
+  | none w t1 t2 h_consistent h_consistent1 h_consistent2 hd h_alphabet1 h_alphabet2 h1 h2 =>
+      aesop(add norm [alphabet])
+
+lemma cost_splitLeaf2 {α} [DecidableEq α] (t : HuffmanTree α) (wa wb : Nat) (a b : α) :
+  consistent t → a ∈ alphabet t → freq t a = wa + wb →
+  cost (splitLeaf t wa a wb b) = cost t + wa + wb := by
+  intro h_consistent h_alphabet h_freq
+  induction a, h_consistent using huffmanTree_induct_consistent with
+  | leaf wb b h_consistent =>
+      simp [alphabet] at h_alphabet
+      simp [freq, h_alphabet] at h_freq
+      simp [cost, splitLeaf, h_alphabet, weight]
+  | left w t1 t2 h_consistent h_consistent1 h_consistent2 hd h_alphabet1 h_alphabet2 h1 h2 =>
+      have h3 := notin_alphabet_imp_freq_0 a t2 h_alphabet2
+      simp [freq, h3] at h_freq
+      simp [h_alphabet1, h_freq] at h1
+      have h4 := weight_splitLeaf (HuffmanTree.node w t1 t2) wa wb a b h_consistent h_alphabet
+      simp [freq, h3, h_freq, weight,splitLeaf] at h4
+      simp [cost, splitLeaf, h1]
+      aesop (add norm [h4, cost, weight, splitLeaf])
+      ring_nf
+  | right w t1 t2 h_consistent h_consistent1 h_consistent2 hd h_alphabet1 h_alphabet2 h1 h2 =>
+      have h3 := notin_alphabet_imp_freq_0 a t1 h_alphabet1
+      simp [freq, h3] at h_freq
+      simp [h_alphabet2, h_freq] at h2
+      have h4 := weight_splitLeaf (HuffmanTree.node w t1 t2) wa wb a b h_consistent h_alphabet
+      simp [freq, h3, h_freq, weight,splitLeaf] at h4
+      simp [cost, splitLeaf, h2]
+      aesop (add norm [h4, cost, weight, splitLeaf])
+      ring_nf
+  | none w t1 t2 h_consistent h_consistent1 h_consistent2 hd h_alphabet1 h_alphabet2 h1 h2 =>
+      aesop(add norm [alphabet])
 
 /-
 SortedByWeight Lemmas
@@ -355,38 +364,39 @@ lemma sortedByWeight_insortTree {α}
 /-
 lemma cost_swapFourSyms_le
 -/
+
 lemma cost_swapFourSyms_le {α} [DecidableEq α]
   (t : HuffmanTree α) (a b c d : α)
-  (hcon : consistent t) (hm : minima t a b) (hc : c ∈ alphabet t)
+  (h_consistent : consistent t) (h_minima : minima t a b) (hc : c ∈ alphabet t)
   (hd : d ∈ alphabet t) (hdhc : depth t c = height t)
-  ( hdhd : depth t d = height t) (hcd : c ≠ d) :
+  (hdhd : depth t d = height t) (h_cd : c ≠ d) :
   cost (swapFourSyms t a b c d) ≤ cost t := by
-  rcases hm with ⟨ha, hb, hab, hf⟩
+  rcases h_minima with ⟨ha, hb, h_ab, h_freq⟩
   by_cases h : a ≠ d ∧ b ≠ c
-  · rcases h with ⟨had, hbc⟩
-    by_cases hac : a = c
-    · simp [swapFourSyms, hbc, hac, hcd, swapLeaves_id t c hcon,swapSyms]
-      by_cases hbd : b = d
-      · simp [hbd, swapLeaves_id t d hcon]
-      · have hcost := cost_swapLeaves t (freq t b) (freq t d) b d hcon hbd
+  · rcases h with ⟨h_ad, h_bc⟩
+    by_cases h_ac : a = c
+    · simp [swapFourSyms, h_bc, h_ac, h_cd, swapLeaves_id t c h_consistent,swapSyms]
+      by_cases h_bd : b = d
+      · simp [h_bd, swapLeaves_id t d h_consistent]
+      · have hcost := cost_swapLeaves t (freq t b) (freq t d) b d h_consistent h_bd
         simp [hb, hd] at hcost
-        have hf2: freq t b ≤ freq t d := (hf d hd (Ne.symm had) (Ne.symm hbd)).2
+        have h_freq2: freq t b ≤ freq t d := (h_freq d hd (Ne.symm h_ad) (Ne.symm h_bd)).2
         have hd2: depth t b ≤ depth t d := by grind[depth_le_height]
         nlinarith
-    · by_cases hbd : b = d
+    · by_cases h_bd : b = d
       · have : swapFourSyms t a b c d = swapLeaves t (freq t a) a (freq t c) c := by
           grind[swapFourSyms,swapLeaves_id,swapSyms, consistent_swapLeaves]
         rw [this]
-        have hcost := cost_swapLeaves t (freq t a) (freq t c) a c hcon hac
+        have hcost := cost_swapLeaves t (freq t a) (freq t c) a c h_consistent h_ac
         simp [ha, hc] at hcost
-        have hf2: freq t a ≤ freq t c := (hf c hc (Ne.symm hac) (Ne.symm hbc)).1
+        have h_freq2: freq t a ≤ freq t c := (h_freq c hc (Ne.symm h_ac) (Ne.symm h_bc)).1
         have hd2: depth t a ≤ depth t c := by grind[depth_le_height]
         nlinarith
-      · have := hf c hc (Ne.symm hac) (Ne.symm hbc)
+      · have := h_freq c hc (Ne.symm h_ac) (Ne.symm h_bc)
         calc
           cost (swapFourSyms t a b c d) ≤ cost (swapSyms t a c) := by
             let t' := swapLeaves t (freq t a) a (freq t c) c
-            have hf3' : freq t' b ≤ freq t' d := by grind[freq_swapLeaves,freq,alphabet]
+            have h_freq' : freq t' b ≤ freq t' d := by grind[freq_swapLeaves,freq,alphabet]
             aesop(add norm[swapFourSyms])
           _ ≤ cost t := by aesop
   · grind[swapSyms, cost_swapSyms_le,depth_le_height,swapFourSyms,cost_swapLeaves]
@@ -405,49 +415,48 @@ lemma twice_freq_le_imp_minima {α} [DecidableEq α]
 lemma optimum_splitLeaf {α : Type} [DecidableEq α]
   (t : HuffmanTree α) (a b : α) (wa wb : ℕ)
   (h_consistent : consistent t) (h_optimum : optimum t)
-  (ha : a ∈ alphabet t) (hb : b ∉ alphabet t) (h_freq : freq t a = wa + wb)
+  (ha_t : a ∈ alphabet t) (hb_t : b ∉ alphabet t) (h_freq : freq t a = wa + wb)
   (h1 : ∀ c ∈ alphabet t, freq t c ≥ wa ∧ freq t c ≥ wb) :
   optimum (splitLeaf t wa a wb b) := by
-  intro u h_consistent_u hatu hf
+  intro u h_consistent_u h_alp_t_u h_freq_u
   let t' := splitLeaf t wa a wb b
   change cost t' ≤ cost u
-  have h_freq_a : freq t' a = freq u a := congr_fun hf a
-  have h_freq_b : freq t' b = freq u b := congr_fun hf b
-  have hat' : a ∈ alphabet t' := by simp [t', ha]
-  have hbt' : b ∈ alphabet t' := by simp [t', ha]
-  have hau : a ∈ alphabet u := by grind
-  have hbu : b ∈ alphabet u := by grind
-  have hab : a ≠ b := by grind
-  by_cases h_height_zero : height t' = 0
-  · simp_all
-  · have hhu : height u > 0 := by
-      by_contra! h
-      have hul : ∃ w x, u = HuffmanTree.leaf w x := by
-        cases u <;> grind[height]
-      grind[alphabet]
-    obtain ⟨c, hcu, hcdepth⟩ := exists_at_height u h_consistent_u
+  by_cases h_height_t_0 : height t' = 0
+  · simp[*]
+  · have ha_u : a ∈ alphabet u := by
+      have ha_t' : a ∈ alphabet t' := by simp [t', ha_t]
+      grind
+    have hb_u : b ∈ alphabet u := by
+      have hb_t' : b ∈ alphabet t' := by simp [t', ha_t]
+      grind
+    have h_ab : a ≠ b := by grind
+    have h_height_u : height u > 0 := by cases u <;> grind[height,alphabet]
+    obtain ⟨c, hc_u, hc_depth⟩ := exists_at_height u h_consistent_u
     let d := sibling u c
-    have hdc : d ≠ c := by grind[depth_height_imp_sibling_ne]
-    have hdu : d ∈ alphabet u := by
-      simp [d, sibling_ne_imp_sibling_in_alphabet u c hdc]
-    have hddepth : depth u d = height u := by grind[depth_sibling]
+    have h_dc : d ≠ c := by grind[depth_height_imp_sibling_ne]
+    have hd_u : d ∈ alphabet u := by
+      simp [d, sibling_ne_imp_sibling_in_alphabet u c h_dc]
+    have hd_depth : depth u d = height u := by grind[depth_sibling]
     let u' := swapFourSyms u a b c d
     have h_consistent_u' : consistent u' :=
       consistent_swapFourSyms u a b c d h_consistent_u
-    have halpu' : alphabet u' = alphabet u :=
-      alphabet_swapFourSyms u a b c d hau hbu hcu hdu
+    have h_alp_u'_u : alphabet u' = alphabet u :=
+      alphabet_swapFourSyms u a b c d ha_u hb_u hc_u hd_u
     have h_freq_u' : freq u' = freq u :=
-      freq_swapFourSyms u a b c d h_consistent_u hau hbu hcu hdu
-    have hab : a ≠ b := by grind
-    have hsibab : sibling u' a = b := by grind[sibling_swapFourSyms_when_4th_is_sibling]
+      freq_swapFourSyms u a b c d h_consistent_u ha_u hb_u hc_u hd_u
+    have h_sib_a : sibling u' a = b := by grind[sibling_swapFourSyms_when_4th_is_sibling]
     let v := mergeSibling u' a
+    have h_consistent_v : consistent v := by grind[consistent_mergeSibling]
+    have h_freq_a : freq t' a = freq u a := congr_fun h_freq_u a
+    have h_freq_b : freq t' b = freq u b := congr_fun h_freq_u b
     have h_freq_v : freq v = freq t := by
       ext x
-      have hau': a ∈ alphabet u' := by simp [halpu', hau]
-      rw [freq_mergesibling u' a h_consistent_u' hau' ?_] <;> aesop(add norm[h_freq_u',hf.symm])
+      have ha_u': a ∈ alphabet u' := by simp [h_alp_u'_u, ha_u]
+      rw [freq_mergesibling u' a h_consistent_u' ha_u' ?_] <;>
+      aesop(add norm[h_freq_u',h_freq_u.symm])
     calc
       cost t' = cost t + wa + wb :=
-        cost_splitLeaf t wa wb a b h_consistent ha h_freq
+        cost_splitLeaf t wa wb a b h_consistent ha_t h_freq
       _ ≤ cost v + wa + wb := by
         grind[optimum,consistent_mergeSibling,alphabet_splitLeaf,alphabet_mergeSibling]
       _ = cost u' := by
@@ -456,24 +465,24 @@ lemma optimum_splitLeaf {α : Type} [DecidableEq α]
           rw [this, h_freq_a, h_freq_u']
         have hwbfreq : wb = freq u' (sibling u' a) := by
           have : wb = freq t' b := by grind[freq_splitLeaf]
-          rw [hsibab, this, h_freq_b, h_freq_u']
+          rw [h_sib_a, this, h_freq_b, h_freq_u']
         grind [cost_mergeSibling]
       _ ≤ cost u := by
-        have hmin : minima u a b := by
-          refine ⟨hau, hbu, hab, ?_⟩
+        have h_minima : minima u a b := by
+          refine ⟨ha_u, hb_u, h_ab, ?_⟩
           intro c hc hca hcb'
-          have hct' : c ∈ alphabet t' := by
-            rw [hatu]
+          have hc_t' : c ∈ alphabet t' := by
+            rw [h_alp_t_u]
             exact hc
-          simp [t', alphabet_splitLeaf, ha] at hct'
-          rcases hct' with (hcb | hct)
+          simp [t', alphabet_splitLeaf, ha_t] at hc_t'
+          rcases hc_t' with (h_cb | hc_t)
           · exfalso
-            exact hcb' hcb
+            exact hcb' h_cb
           · have h_freq_uc: freq u c = freq t c := by
-              simp [hf.symm,freq_splitLeaf t wa wb a b c h_consistent hb, hca, hcb']
+              simp [h_freq_u.symm,freq_splitLeaf t wa wb a b c h_consistent hb_t, hca, hcb']
             grind[freq_splitLeaf]
-        exact cost_swapFourSyms_le u a b c d h_consistent_u hmin hcu
-          hdu hcdepth hddepth hdc.symm
+        exact cost_swapFourSyms_le u a b c d h_consistent_u h_minima hc_u
+          hd_u hc_depth hd_depth h_dc.symm
 
 @[simp]
 lemma cachedWeight_splitLeaf {α : Type} [DecidableEq α]
@@ -506,7 +515,7 @@ lemma splitLeafF_insortTree_when_in_alphabetF_tail {α : Type} [DecidableEq α]
         aesop (add norm [splitLeaf, splitLeafF, insortTree])
       · simp [alphabetF, hau] at h_a_ts
         simp [freqF, notin_alphabet_imp_freq_0 a u hau] at h_freq
-        aesop (add norm [splitLeaf, splitLeafF, insortTree])
+        aesop (add norm [splitLeaf, splitLeafF, insortTree, freqF])
 
 lemma splitLeafF_nonempty {α : Type} [DecidableEq α]
   {ts : Forest α} {wa wb : Nat} {a b : α} (hne : ts ≠ []) :
