@@ -12,9 +12,12 @@ This repository contains a formalization of the Huffman coding algorithm in Lean
 
 ```
 HuffmanAlgorithm/
-├─ Huffman.lean       # Huffman tree datatype, cachedWeight, uniteTrees, insortTree, huffman algorithm, Basic definitions: alphabet, consistent, depth, height, freq, weight, cost, optimum
-├─ Function.lean      # Helper functions: swapSyms, swapLeaves, swapFourSyms, mergeSibling, splitLeaf
-├─ Lemmas.lean        # Lemmas about Huffman
-├─ Lemmas2.lean       # More lemmas about Huffman
-HuffmanAlgorithm.lean # Optimum theorem
+├─ BasicLemmas.lean       # Basic lemmas used for proof
+├─ Basic.lean             # Huffman tree definition and properties
+├─ Algorithm.lean         # Huffman's Algorithm and tree building operation
+├─ TreeStructure.lean     # Structure of Huffman tree
+├─ Transformations.lean   # Structural transformation operations
+├─ OptimalityLemmas.lean  # Lemmas for Optimum Theorem
+├─ Optimum.lean           # Optimum Theorem
+HuffmanAlgorithm.lean     # Huffman's Algorithm encoding
 ```
