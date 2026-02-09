@@ -3,8 +3,14 @@ import Mathlib.Tactic
 /-!
 # Basic Lemmas used for proof
 
-This file contains basic lemmas about element and disjoint
+This file contains basic lemmas about element of finset and their intersections
+
+It provides results showing that if two sets are disjoint:
+
+- An element cannot belong to both sets at the same time.
+- Membership in one set means non-membership in the other.
 -/
+
 lemma mem_inter_empty {α} [DecidableEq α]
   (A B : Finset α) (a : α) (h : A ∩ B = ∅)
   (h1 : a ∈ A) (h2 : a ∈ B) : False := by

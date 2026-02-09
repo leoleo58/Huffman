@@ -4,7 +4,7 @@ This repository contains a formalization of the Huffman coding algorithm in Lean
 
 - A HuffmanTree datatype
 - Functions for computing weights, frequencies, consistency,...
-- The Huffman merging algorithm
+- The Huffman merging algorithm and tree transformation
 - Supporting lemmas
 - Huffman's optimality theorem
 

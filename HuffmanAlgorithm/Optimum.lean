@@ -3,15 +3,21 @@ import HuffmanAlgorithm.OptimalityLemmas
 /-!
 # Optimality of Huffman Trees
 
-This file contains the main optimality theorem of Huffman Algorithm.
+This file contains the main theorem proving the optimality of Huffman trees.
+
+Huffman’s algorithm constructs a tree that minimizes the total cost
+for a given set of symbol frequencies.
 
 ## Main Result
 
-Theorem `optimum_huffman`
-The tree build by Huffman's algorithm is optimum,
-no tree build from the same forest has lower cost
+Theorem `optimum_huffman` : Shows that the Huffman tree built from any non-empty forest is optimal,
+  no other tree with the same alphabet and frequencies has lower cost.
 -/
 
+/--
+The Huffman tree constructed from a forest `ts` using the `huffman` function
+is optimal.
+-/
 theorem optimum_huffman {α : Type} [d : DecidableEq α] (ts : Forest α)
   (hcf : consistentF ts)
   (hh : heightF ts = 0)

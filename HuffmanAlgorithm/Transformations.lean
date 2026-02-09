@@ -5,16 +5,16 @@ import HuffmanAlgorithm.TreeStructure
 
 This file defines tree transformations with swapping symbols, 4 symbols, or
 leaves within a Huffman tree together with lemmas showing their effect on the tree structure.
+These transformations are used for tree optimality proof
 
 ## Definitions
 - `swapLeaves t a b`       : Swap two leaf nodes of symbols `a` and `b`.
 - `swapSyms t a b`         : Swap two symbols `a` and `b` in tree `t`.
-- `swapFourSyms t a b c d` : Swap `a` and `b` with `c` and `d`.
+- `swapFourSyms t a b c d` : Swap two pairs of symbol `a` and `b` with `c` and `d`.
 -/
 
-/-
-swapLeaves
-Exchange leaf nodes in a tree
+/--
+Swap two leaf nodes `a` and `b` in tree `t` along with their weights `wa` and `wb`.
 -/
 def swapLeaves {α} [DecidableEq α] : HuffmanTree α → Nat → α → Nat → α → HuffmanTree α
   | HuffmanTree.leaf wc c, wa, a, wb, b =>
@@ -88,6 +88,10 @@ lemma freq_swapLeaves {α} [DecidableEq α]
   | node w t1 t2 ih1 ih2 =>
       grind[freq, swapLeaves, alphabet,mem_inter_empty,consistent]
 
+/--
+Swapping two leaves `a` and `b` in a consistent Huffman tree updates the tree's weight
+according to the frequencies of the swapped leaves.
+-/
 @[simp]
 lemma weight_swapLeaves {α} [DecidableEq α]
   (t : HuffmanTree α) (wa wb : ℕ) (a b : α) :
@@ -107,6 +111,10 @@ lemma weight_swapLeaves {α} [DecidableEq α]
   induction a, h_consistent using huffmanTree_induct_consistent <;>
   grind[weight, alphabet, freq, swapLeaves, mem_inter_empty, notin_alphabet_imp_freq_0]
 
+/--
+Computes the cost of a tree after swapping two leaves `a` and `b` by
+updating cost according to the swapped weights and original depths.
+-/
 @[simp]
 lemma cost_swapLeaves {α} [DecidableEq α]
   (t : HuffmanTree α) (wa wb : ℕ) (a b : α) :
@@ -153,6 +161,10 @@ lemma cost_swapLeaves {α} [DecidableEq α]
           · by_cases h_b_t2 : b ∈ alphabet t2 <;> simp_all ; grind
 
 set_option maxHeartbeats 300000
+/--
+Swapping the leaf `a` with the sibling of `b` preserves the sibling relationship:
+after the swap, `a`’s sibling becomes `b`.
+-/
 @[simp]
 lemma sibling_swapLeaves_sibling {α} [DecidableEq α]
   (t : HuffmanTree α) (a b : α) (wa ws : ℕ) :
@@ -194,9 +206,8 @@ lemma sibling_swapLeaves_sibling {α} [DecidableEq α]
           · aesop (add norm [sibling, alphabet])
 set_option linter.style.setOption false
 
-/-
-swapSyms
-A more simple form of swapLeaves
+/--
+Swap symbols `a` and `b` in tree `t`. A more simple form of swapLeaves.
 -/
 def swapSyms {α} [DecidableEq α] (t : HuffmanTree α) (a b : α) : HuffmanTree α :=
   swapLeaves t (freq t a) a (freq t b) b
@@ -230,6 +241,9 @@ lemma freq_swapSyms {α} [DecidableEq α]
   freq (swapSyms t a b) = freq t := by
     by_cases h_a_b : a = b <;> aesop (add norm [swapSyms])
 
+/--
+The cost of a tree after swapping two symbols is updated according to the new depths.
+-/
 @[simp]
 lemma cost_swapSyms {α} [DecidableEq α]
   (t : HuffmanTree α) (a b : α) :
@@ -240,6 +254,10 @@ lemma cost_swapSyms {α} [DecidableEq α]
     · simp_all
     · grind[swapSyms,cost_swapLeaves]
 
+/--
+Cost after swapping symbols `a` and `b` is lower or equals to original cost
+if `freq t a ≤ freq t b` and `depth t a ≤ depth t b`
+-/
 @[simp]
 lemma cost_swapSyms_le {α} [DecidableEq α]
   (t : HuffmanTree α) (a b : α)
@@ -250,6 +268,9 @@ lemma cost_swapSyms_le {α} [DecidableEq α]
               ≤ freq t a * depth t a + freq t b * depth t b := by nlinarith
     grind [cost_swapSyms]
 
+/--
+Sibling relationships is preserved after swapping symbols
+-/
 @[simp]
 lemma sibling_swapSyms_sibling {α} [DecidableEq α]
   (t : HuffmanTree α) (a b : α) :
@@ -266,8 +287,7 @@ lemma sibling_swapSyms_other_sibling {α} [DecidableEq α]
     have hsbc := sibling_reciprocal t b c h_consistent (by rw [hc])
     grind[sibling_reciprocal,sibling_swapSyms_sibling,consistent_swapSyms, sibling]
 
-/-
-swapFourSyms
+/--
 Exchange 2 symbol with other 2 symbol
 a and b will take the place of c and d
 -/
@@ -310,6 +330,9 @@ lemma freq_swapFourSyms {α} [DecidableEq α]
     · ext x
       aesop
 
+/--
+Sibling relationships is preserved after swapping 4 symbols
+-/
 lemma sibling_swapFourSyms_when_4th_is_sibling {α} [DecidableEq α]
   (t : HuffmanTree α) (a b c d : α)
   (h_consistent : consistent t) (h_a: a ∈ alphabet t) (h_b : b ∈ alphabet t)

@@ -5,11 +5,14 @@ import aesop
 # Basic Definitions for Huffman Trees
 
 This file introduces the core definition used throughout the
-formalization of Huffman’s algorithm. It defines the Huffman tree and
-it's properties: which are alphabets, frequencies, depth, height, weight and cost.
-Additionally, it introduces `minima` and `optimum`, which are used in later proofs.
-For each definitions, this file also provides lemmas about their
-properties and relationships.
+formalization of Huffman’s algorithm.
+It defines the Huffman tree and forest, along with their properties:
+which are alphabets, consistent, frequencies, depth, height.
+Additional tree properties weight and cost is also defined.
+
+`minima` and `optimum` definition which are used in optimality proofs is also introduced here.
+
+Lemmas about main definitions describing its properties and relationships is also included.
 
 ## Definitions
 
@@ -26,23 +29,31 @@ properties and relationships.
 - `minima t a b`     : Condition stating that two symbols have the lowest frequencies in tree `t`.
 -/
 
-/-
-Huffman Tree and Forest definition
+/--
+A Huffman tree over an alphabet `α`.
+
+Leaves are labeled by symbols and their frequencies, while
+nodes are labeled by sum of frequencies of their subtrees.
 -/
 inductive HuffmanTree (α : Type) where
   | leaf (w : Nat) (a : α) : HuffmanTree α
   | node (w : Nat) (t1 : HuffmanTree α) (t2 : HuffmanTree α) : HuffmanTree α
 
+/--
+A list of Huffman trees.
+-/
 abbrev Forest (α) := List (HuffmanTree α)
 
-/-
-Alphabet
-Set of symbols appearing in a tree
+/--
+The set of symbols occurring in the leaves of a Huffman tree.
 -/
 def alphabet {α} [DecidableEq α] : HuffmanTree α → Finset α
   | HuffmanTree.leaf _ a => {a}
   | HuffmanTree.node _ t1 t2 => alphabet t1 ∪ alphabet t2
 
+/--
+The set of symbols occurring in a forest of Huffman trees.
+-/
 def alphabetF {α} [DecidableEq α] : Forest α → Finset α
   | [] => Finset.empty
   | t :: ts => alphabet t ∪ alphabetF ts
@@ -59,20 +70,26 @@ lemma alphabet_cases {α} [DecidableEq α]
   (a ∉ alphabet t1 ∧ a ∉ alphabet t2) := by
   by_cases h1 : a ∈ alphabet t1 <;> grind[not_mem_inter_empty]
 
-/-
-Consistent
-Each symbol only appears in one leaf in a tree
-
-`huffmanTree_induct_consistent` is used as a custom induction rule
+/--
+A Huffman tree is consistent if each symbol only appears in one leaf in a tree and
+for each inner node the alphabets of the two subtrees are disjoint.
 -/
 def consistent {α} [DecidableEq α] : HuffmanTree α → Prop
   | HuffmanTree.leaf _ _ => True
   | HuffmanTree.node _ t1 t2 => (alphabet t1 ∩ alphabet t2 = ∅) ∧ consistent t1 ∧ consistent t2
 
+/--
+A forest of Huffman trees is `consistent` if all trees in the forest
+are consistent and have disjoint alphabets.
+-/
 def consistentF {α} [DecidableEq α] : Forest α → Prop
   | [] => True
   | t :: ts => (alphabet t ∩ alphabetF ts = ∅) ∧ consistent t ∧ consistentF ts
 
+/--
+A custom induction rule for Huffman trees under the assumption
+of consistency. It is used throughout the development to simplify proofs.
+-/
 theorem huffmanTree_induct_consistent {α} [DecidableEq α]
 {P : (t : HuffmanTree α) → α → consistent t → Prop}
   {t : HuffmanTree α} (a : α) (hc : consistent t)
@@ -99,9 +116,8 @@ theorem huffmanTree_induct_consistent {α} [DecidableEq α]
   : P t a hc := by
     induction t <;> grind[not_mem_inter_empty, consistent, alphabet_cases]
 
-/-
-Depth
-Path length from root to leaf
+/--
+Depth is the length of the path from root of tree to a leaf.
 -/
 def depth {α} [DecidableEq α] : HuffmanTree α → α → Nat
   | HuffmanTree.leaf _ _, _ => 0
@@ -110,14 +126,16 @@ def depth {α} [DecidableEq α] : HuffmanTree α → α → Nat
     else if a ∈ alphabet t2 then depth t2 a + 1
     else 0
 
-/-
-Height
-Length of longest path from root to leaf
+/--
+The height of a Huffman tree, the length of the longest path from root to leaf.
 -/
 def height {α} : HuffmanTree α → Nat
   | HuffmanTree.leaf _ _ => 0
   | HuffmanTree.node _ t1 t2 => max (height t1) (height t2) + 1
 
+/--
+The maximum height of all trees in a forest.
+-/
 def heightF {α} : Forest α → Nat
   | [] => 0
   | t :: ts => max (height t) (heightF ts)
@@ -127,6 +145,9 @@ lemma depth_le_height {α} [DecidableEq α] (t : HuffmanTree α) (a : α) :
   depth t a ≤ height t := by
   induction t <;> aesop(add norm[depth, height])
 
+/--
+In a consistent Huffman tree, exists a symbol whose depth is equal to the height of the tree.
+-/
 @[simp]
 lemma exists_at_height {α} [DecidableEq α] (t : HuffmanTree α) :
   consistent t → ∃a ∈ alphabet t, depth t a = height t := by
@@ -149,6 +170,10 @@ lemma depth_max_height_right {α} [DecidableEq α]
   (hh : height t2 ≥ height t1) :
   depth t2 a = height t2 := by aesop
 
+/--
+If a Huffman tree `t` has positive height and is consistent, then any Huffman tree `u`
+with the same alphabet also has positive height.
+-/
 lemma height_gt_0_alphabet_eq_imp_height_gt_0 {α} [DecidableEq α] (t u : HuffmanTree α)
   (h_height : height t > 0) (h_consistent : consistent t)
   (h_alphabet_t_u : alphabet t = alphabet u)
@@ -176,14 +201,17 @@ lemma height_gt_0_alphabet_eq_imp_height_gt_0 {α} [DecidableEq α] (t u : Huffm
           grind
       | node w t3 t4 => simp [height]
 
-/-
-Frequency
-Sum of weight from nodes
+/--
+`freq t a` frequency associated with symbol `a` in tree `t`, `0` if it's not in the tree.
 -/
 def freq {α} [DecidableEq α] : HuffmanTree α → α → Nat
   | HuffmanTree.leaf w a, b => if b = a then w else 0
   | HuffmanTree.node _ t1 t2, b => freq t1 b + freq t2 b
 
+/--
+freqF is the total frequency of symbol `a` in a forest,
+defined as the sum of its frequencies from all trees.
+-/
 def freqF {α} [DecidableEq α] : Forest α → α → Nat
   | [] , _ => 0
   | t :: ts , b => freq t b + freqF ts b
@@ -210,12 +238,14 @@ lemma freq_0_left {α} [DecidableEq α] (a : α) (t1 t2 : HuffmanTree α)
   freq t1 a = 0 := by
   grind[notin_alphabet_imp_freq_0, not_mem_inter_empty]
 
-lemma heightF_0_imp_Leaf_freqF_in_set {α} [DecidableEq α] (ts : Forest α) (a : α) :
-  consistentF ts →
-  heightF ts = 0 →
-  a ∈ alphabetF ts →
+/--
+If a forest is consistent and has height zero, then for symbol `a` from the forest alphabet,
+the leaf `a` and its frequency is an element of the forest.
+-/
+lemma heightF_0_imp_Leaf_freqF_in_set {α} [DecidableEq α] (ts : Forest α) (a : α)
+  (h_consistent : consistentF ts) (h_height : heightF ts = 0)
+  (h_alphabet : a ∈ alphabetF ts) :
   HuffmanTree.leaf (freqF ts a) a ∈ ts := by
-  intro h_consistent h_height h_alphabet
   induction ts with
   | nil =>
       simp [alphabetF] at h_alphabet
@@ -226,14 +256,17 @@ lemma heightF_0_imp_Leaf_freqF_in_set {α} [DecidableEq α] (ts : Forest α) (a 
             freq, freqF, alphabet, alphabetF, alphabet_cases,
             consistent, consistentF, height, heightF]
 
-/-
-Weight
-Weight of the tree
+/--
+The total weight of a Huffman tree, defined as the sum of frequencies from all leaves.
 -/
 def weight {α} : HuffmanTree α → Nat
   | HuffmanTree.leaf w _ => w
   | HuffmanTree.node _ t1 t2 => weight t1 + weight t2
 
+/--
+For a consistent Huffman tree, the weight is the sum of the
+frequencies of all symbols in its alphabet.
+-/
 @[simp]
 lemma weight_eq_Sum_freq {α} [DecidableEq α] (t : HuffmanTree α) :
   consistent t → weight t = (∑a ∈ alphabet t, freq t a) := by
@@ -256,14 +289,19 @@ lemma weight_eq_Sum_freq {α} [DecidableEq α] (t : HuffmanTree α) :
       rw [ih1 h_consistent_t1, ih2 h_consistent_t2, Finset.sum_union h3]
       simp [Finset.sum_add_distrib, h_sum_1, h_sum_2]
 
-/-
-Cost
-Sum of freq * depth
+/--
+The cost of a Huffman tree, also called the weighted path length.
+
+It is the sum of freq * depth
 -/
 def cost {α} : HuffmanTree α → Nat
   | HuffmanTree.leaf _ _ => 0
   | HuffmanTree.node _ t1 t2 => weight t1 + cost t1 + weight t2 + cost t2
 
+/--
+This theorem proves that for a consistent Huffman tree,
+the cost is the sum of frequency multiplied by depth for all symbols.
+-/
 theorem cost_eq_Sum_freq_mult_depth
   {α} [DecidableEq α] (t : HuffmanTree α) :
   consistent t →
@@ -322,9 +360,9 @@ lemma height_0_imp_cost_0 {α} (t : HuffmanTree α) :
   height t = 0 → cost t = 0 := by
   cases t <;> simp [height, cost]
 
-/-
-Optimum
-The cost of tree is lower than other comparable tree
+/--
+A Huffman tree is `optimum` if the cost of tree is lower than other comparable tree
+with the same alphabet.
 -/
 def optimum {α} [DecidableEq α] (t : HuffmanTree α) : Prop :=
   ∀ u : HuffmanTree α, consistent u →
@@ -332,9 +370,9 @@ def optimum {α} [DecidableEq α] (t : HuffmanTree α) : Prop :=
     freq t = freq u →
     cost t ≤ cost u
 
-/-
-Minima
-Two symbols have the lowest frequencies in a tree
+/--
+`minima t a b` means `a` and `b` have the lowest frequency among all
+symbols occurring in the tree `t`.
 -/
 def minima {α} [DecidableEq α]
   (t : HuffmanTree α) (a b : α) : Prop :=
@@ -347,6 +385,10 @@ def minima {α} [DecidableEq α]
       freq t a ≤ freq t c ∧
       freq t b ≤ freq t c
 
+/--
+If two symbols `a` and `b` have frequencies less than or equal to all other
+frequencies in a tree, then they form a `minima` pair.
+-/
 lemma twice_freq_le_imp_minima {α} [DecidableEq α]
   (t u : HuffmanTree α) (a b : α) (wa wb : ℕ)
   (h1 : ∀ c ∈ alphabet t, wa ≤ freq t c ∧ wb ≤ freq t c)

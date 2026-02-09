@@ -1,26 +1,27 @@
 import HuffmanAlgorithm.Algorithm
 
 /-!
-# Structure of Huffman Trees
+# Structural properties and operations of Huffman trees
 
 This file formalizes structural properties of Huffman trees.
-It contain sibling relations, merging sibling operations, and split leaf transformation.
-This file also contain the structural condition sortedByWeight.
+It defines sibling relations, merging sibling nodes, and splitting leaf nodes,
+as well as the condition `sortedByWeight`, which states that a forest
+is sorted according to the weights of its trees.
 Lemmas accompanying each definition formalize their structural properties.
 
-## Definitions
+## Main definitions
 
-- `sibling t a`           : Return sibling of `a` in `t`.
-- `mergeSibling t a b`    : Combine a pair of sibling nodes into one.
-- `splitLeaf t wa a wb b` : Splits a leaf node into two.
-- `sortedByWeight ts`     : Predicate stating a list of trees `ts` is sorted by weight.
+- `sibling t a`            : Returns the sibling of symbol `a` in tree `t`.
+- `mergeSibling t a`       : Combines a pair of sibling nodes into a single node.
+- `splitLeaf t wa a wb b`  : Splits a leaf into two leaves.
+- `sortedByWeight ts`      : Predicate stating that a list of trees `ts` is sorted by weight.
 -/
 
-/-
-Sibling
-Returns the label of the node that is the sibling (left or right) of the symbol
+/--
+Returns the label of the node that is the sibling (left or right) of the symbol `a`
 
-`sibling_induct_consistent` is used as a custom induction rule
+- If `a` is not in the tree or the tree is a leaf, returns `a`.
+- If `a` is in a node, returns its sibling in the left or right subtree.
 -/
 def sibling {α} [DecidableEq α] : HuffmanTree α → α → α
   | HuffmanTree.leaf _ _, a => a
@@ -89,6 +90,10 @@ lemma sibling_ne_imp_sibling_in_alphabet {α} [DecidableEq α]
   sibling t a ≠ a → sibling t a ∈ alphabet t := by
   by_cases h_a : a ∈ alphabet t <;> aesop
 
+/--
+A custom induction rule for Huffman trees using sibling and consistency.
+It is used to simplify proofs.
+-/
 theorem sibling_induct_consistent {α} [DecidableEq α]
   {P : (t : HuffmanTree α) → α → consistent t → Prop}
   {t : HuffmanTree α} (a : α) (hc : consistent t)
@@ -133,6 +138,9 @@ theorem sibling_induct_consistent {α} [DecidableEq α]
       grind[mem_inter_empty, in_alphabet_imp_sibling_in_alphabet,
             alphabet_cases, height, alphabet, consistent]
 
+/--
+For a consistent tree, applying `sibling` twice returns the original symbol.
+-/
 @[simp]
 lemma sibling_sibling_id {α} [DecidableEq α]
   (t : HuffmanTree α) (a : α) :
@@ -140,6 +148,9 @@ lemma sibling_sibling_id {α} [DecidableEq α]
   intro h_consistent
   induction a, h_consistent using sibling_induct_consistent <;> aesop (add norm [sibling])
 
+/--
+In a consistent tree, if `a` is the sibling of `b`, then `b` is the sibling of `a`.
+-/
 @[simp]
 lemma sibling_reciprocal {α} [DecidableEq α]
   (t : HuffmanTree α) (a b : α) :
@@ -154,6 +165,9 @@ lemma depth_height_imp_sibling_ne {α} [DecidableEq α]
   simp[*] <;>
   grind[height, depth, alphabet, depth_le_height, sibling]
 
+/--
+Siblings have equal depth in a consistent tree.
+-/
 @[simp]
 lemma depth_sibling {α} [DecidableEq α]
   (t : HuffmanTree α) (a : α) :
@@ -162,9 +176,8 @@ lemma depth_sibling {α} [DecidableEq α]
   induction a, h_consistent using sibling_induct_consistent <;>
   aesop (add norm [depth, alphabet, sibling])
 
-/-
-mergeSibling
-Merge a pair of sibling nodes into one single node
+/--
+Merge a pair of sibling nodes into a single node.
 -/
 def mergeSibling {α} [DecidableEq α] : HuffmanTree α → α → HuffmanTree α
   | HuffmanTree.leaf wb b, _ => HuffmanTree.leaf wb b
@@ -202,6 +215,9 @@ lemma either_height_gt_0_imp_mergeSibling {α} [DecidableEq α]
   height t1 > 0 ∨ height t2 > 0 → mergeSibling (HuffmanTree.node w t1 t2) a =
   HuffmanTree.node w (mergeSibling t1 a) (mergeSibling t2 a) := by aesop
 
+/--
+Merging siblings `a` updates the alphabet by replacing the original sibling with `a`.
+-/
 @[simp]
 lemma alphabet_mergeSibling {α} [DecidableEq α]
   (t : HuffmanTree α) (a : α)
@@ -234,12 +250,19 @@ lemma freq_mergesibling {α} [DecidableEq α]
           either_height_gt_0_imp_sibling,
           either_height_gt_0_imp_mergeSibling]
 
+/--
+Merging siblings does not change the weight of the tree.
+-/
 @[simp]
 lemma weight_mergeSibling {α} [DecidableEq α]
   (t : HuffmanTree α) (a : α) :
   weight (mergeSibling t a) = weight t := by
   induction t, a using mergeSibling.induct <;> grind[weight, mergeSibling]
 
+/--
+The cost of merged tree plus the frequencies of `a` and its
+sibling equals the original cost.
+-/
 @[simp]
 lemma cost_mergeSibling {α} [DecidableEq α]
   (t : HuffmanTree α) (a : α)
@@ -251,9 +274,9 @@ lemma cost_mergeSibling {α} [DecidableEq α]
         notin_alphabet_imp_mergeSibling_id,either_height_gt_0_imp_sibling,
         notin_alphabet_imp_freq_0,sibling,either_height_gt_0_imp_mergeSibling]
 
-/-
-splitLeaf
-Undoing the merging from mergeSibling and spliting a leaf into two
+/--
+Split a leaf node into two leaves `a` and `b` with
+weights `wa` and `wb`. This undos the merging from mergeSibling.
 -/
 def splitLeaf {α} [DecidableEq α] : HuffmanTree α → Nat → α → Nat → α → HuffmanTree α
   | HuffmanTree.leaf wc c, wa, a, wb, b =>
@@ -278,6 +301,10 @@ lemma notin_alphabetF_imp_splitLeafF_id {α} [DecidableEq α]
   a ∉ alphabetF ts → splitLeafF ts wa a wb b = ts := by
   induction ts <;> aesop(add norm[alphabetF, splitLeafF,alphabet,splitLeaf])
 
+/--
+The alphabet after splitting a leaf into `a` and `b`.
+Adds `b` to the alphabet if `a` is in the tree.
+-/
 @[simp]
 lemma alphabet_splitLeaf {α} [DecidableEq α] (t : HuffmanTree α) (wa wb : Nat) (a b : α) :
     alphabet (splitLeaf t wa a wb b) = if a ∈ alphabet t then alphabet t ∪ {b} else alphabet t := by
@@ -302,6 +329,9 @@ lemma freq_splitLeaf {α} [DecidableEq α] (t : HuffmanTree α)
     induction a, h_consistent using huffmanTree_induct_consistent <;>
       aesop (add norm [freq, alphabet, splitLeaf])
 
+/--
+Splitting a leaf preserves weight of the tree.
+-/
 @[simp]
 lemma weight_splitLeaf {α} [DecidableEq α] (t : HuffmanTree α) (wa wb : Nat) (a b : α)
   (h_consistent : consistent t) (h_a : a ∈ alphabet t) (h_freq : freq t a = wa + wb) :
@@ -309,6 +339,10 @@ lemma weight_splitLeaf {α} [DecidableEq α] (t : HuffmanTree α) (wa wb : Nat) 
   induction a, h_consistent using huffmanTree_induct_consistent <;>
     aesop (add norm [weight,splitLeaf,alphabet,freq])
 
+/--
+The cost of the tree after splitting a leaf into `a` and `b`
+increases the cost of the tree by `wa + wb`.
+-/
 lemma cost_splitLeaf {α} [DecidableEq α] (t : HuffmanTree α) (wa wb : Nat) (a b : α) :
   consistent t → a ∈ alphabet t → freq t a = wa + wb →
   cost (splitLeaf t wa a wb b) = cost t + wa + wb := by
@@ -386,9 +420,8 @@ lemma splitLeafF_nonempty {α : Type} [DecidableEq α]
   splitLeafF ts wa a wb b ≠ [] := by
   cases ts <;> grind[splitLeafF]
 
-/-
-sortedByWeight
-Checking if a tree is sorted by weight
+/--
+Condition stating that a forest `ts` is sorted by weight.
 -/
 def sortedByWeight {α} : Forest α → Prop
   | [] => true
@@ -407,6 +440,9 @@ lemma sortedByWeight_Cons_imp_forall_weight_ge {α}
   sortedByWeight (t :: ts) → ∀u ∈ ts, weight u ≥ weight t := by
   induction ts generalizing t <;> grind[sortedByWeight]
 
+/--
+Inserting a tree into a forest that is sorted by weight preserves sorting.
+-/
 @[simp]
 lemma sortedByWeight_insortTree {α}
   (t : HuffmanTree α) (ts : Forest α)

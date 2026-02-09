@@ -5,7 +5,7 @@ import HuffmanAlgorithm.Basic
 
 This file contains the algorithm of the Huffman Tree.
 It defines functions used in the construction of Huffman trees,
-such as cached weight, tree union, and insertion into tree.
+such as cached weight, tree union, and insertion of tree into forest.
 Based on these functions, it formalizes the Huffman algorithm.
 The file also includes lemmas that establish basic correctness and
 structural properties of these constructions.
@@ -14,32 +14,43 @@ structural properties of these constructions.
 
 - `cachedWeight t`    : Computes the weight of tree `t`.
 - `uniteTrees t1 t2`  : Combines two Huffman trees into a single tree with summed weight.
-- `insortTree t ts`   : Inserts tree `t` into forest `ts`.
+- `insortTree t ts`   : Inserts a tree `t` into forest `ts`.
 - `huffman ts h`      : Recursively constructs the Huffman tree from a non-empty forest `ts`.
 -/
 
-/-
-cachedWeight
+/--
+The weight of a node that is stored in the node.
 -/
 def cachedWeight {α} : HuffmanTree α → Nat
   | HuffmanTree.leaf w _ => w
   | HuffmanTree.node w _ _ => w
 
+/--
+For trees of height zero, the cached weight is the actual weight.
+-/
 @[simp]
 lemma height_0_imp_cachedWeight_eq_weight {α} (t : HuffmanTree α) :
   height t = 0 → cachedWeight t = weight t := by
   aesop (add norm[weight, cachedWeight,height])
 
-/-
-uniteTrees
+/--
+Combine two Huffman trees into a single tree.
+
+The final tree has as children the input trees and its weight is the sum of their weights.
 -/
 def uniteTrees {α} (t1 t2 : HuffmanTree α) : HuffmanTree α :=
   HuffmanTree.node (cachedWeight t1 + cachedWeight t2) t1 t2
 
+/--
+The alphabet of a united tree is the union of the alphabets of its input trees.
+-/
 @[simp]
 lemma alphabet_uniteTrees {α : Type} [DecidableEq α] (t1 t2 : HuffmanTree α) :
   alphabet (uniteTrees t1 t2) = alphabet t1 ∪ alphabet t2 := by simp [uniteTrees, alphabet]
 
+/--
+Uniting two consistent trees with disjoint alphabets creates a consistent tree.
+-/
 @[simp]
 lemma consistent_uniteTrees {α : Type} [DecidableEq α] (t1 t2 : HuffmanTree α)
   (h_consistent_t1 : consistent t1) (h_consisstent_t2 : consistent t2)
@@ -50,8 +61,8 @@ lemma consistent_uniteTrees {α : Type} [DecidableEq α] (t1 t2 : HuffmanTree α
 lemma freq_uniteTrees {α : Type} [DecidableEq α] (t1 t2 : HuffmanTree α) (a : α) :
   freq (uniteTrees t1 t2) a = freq t1 a + freq t2 a := by simp [uniteTrees, freq]
 
-/-
-insortTree
+/--
+Insert a Huffman tree into a forest, preserving the ordering by weight.
 -/
 def insortTree {α} (u : HuffmanTree α) : List (HuffmanTree α) → List (HuffmanTree α)
   | [] => [u]
@@ -76,6 +87,9 @@ lemma insortTree_ne_nil {α} (u : HuffmanTree α) (ts : List (HuffmanTree α)) :
   have h := insortTree_length u ts
   simp [H] at h
 
+/--
+Inserting a tree into a forest joins its alphabet to the forest alphabet.
+-/
 @[simp]
 lemma alphabetF_insortTree {α : Type} [DecidableEq α] (u : HuffmanTree α) (ts : Forest α) :
   alphabetF (insortTree u ts) = alphabet u ∪ alphabetF ts := by
@@ -99,8 +113,10 @@ lemma heightF_insortTree {α : Type} (u : HuffmanTree α) (ts : Forest α) :
   heightF (insortTree u ts) = max (height u) (heightF ts) := by
   induction ts <;> aesop (add norm[heightF, max_left_comm, height, insortTree])
 
-/-
-Huffman's algorithm
+/--
+Construct a Huffman tree from a non-empty forest.
+
+At each step, two trees are combined and inserted into the forest until only a tree is left.
 -/
 def huffman {α} (xs : Forest α) (h : xs ≠ []) : HuffmanTree α :=
   match xs with
@@ -109,6 +125,9 @@ def huffman {α} (xs : Forest α) (h : xs ≠ []) : HuffmanTree α :=
       huffman (insortTree (uniteTrees t1 t2) ts) (insortTree_ne_nil _ _)
 termination_by xs.length
 
+/--
+The alphabet of the Huffman tree constructed from a forest is exactly the alphabet of the forest.
+-/
 @[simp]
 lemma alphabet_huffman {α} [DecidableEq α] (ts : Forest α) (h : ts ≠ []) :
   alphabet (huffman ts h) = alphabetF ts := by
@@ -119,6 +138,9 @@ lemma alphabet_huffman {α} [DecidableEq α] (ts : Forest α) (h : ts ≠ []) :
   | case2 t1 t2 ts h1 h2 ih =>
       simp [huffman, alphabetF, ih, Finset.union_left_comm, Finset.union_comm]
 
+/--
+If the input forest is consistent, then the Huffman tree constructed is also consistent.
+-/
 @[simp]
 lemma consistent_huffman {α} [DecidableEq α] (ts : Forest α) (h : ts ≠ []) :
   consistentF ts → consistent (huffman ts h) := by
@@ -128,6 +150,9 @@ lemma consistent_huffman {α} [DecidableEq α] (ts : Forest α) (h : ts ≠ []) 
       simp [consistentF, alphabetF, Finset.inter_union_distrib_left] at ih ⊢
       grind[consistent_uniteTrees, consistent,huffman,consistentF]
 
+/--
+The frequency of a symbol in the Huffman tree constructed is its total frequency in the forest.
+-/
 @[simp]
 lemma freq_huffman {α} [DecidableEq α] (ts : Forest α) (a : α) (h : ts ≠ []) :
   freq (huffman ts h) a = freqF ts a := by

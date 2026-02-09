@@ -3,22 +3,31 @@ import HuffmanAlgorithm.Transformations
 /-!
 # Lemmas for Huffman Tree Optimality
 
-This file contains key lemmas used in the proof of Huffman’s optimality.
+This file contains key lemmas used to proving the optimality of Huffman trees
 
-## Main Results
+## Lemmas
 - Lemma `cost_swapFourSyms_le`
 If a and b are minima and c and d are at the bottom of the tree,
 swapping a and b with c and d does not increase the cost of tree
 
 - Lemma `optimum_splitLeaf`
-The tree `splitLeaf t wa a wb b` is optimal if `t` is optimal,
-with the assumption that `freq t a = wa + wb`
+The tree `splitLeaf t wa a wb b` is optimal if `t` is optimal.
 
 - Lemma `splitLeaf_huffman_commute`
 Spliting a leaf node before applying Huffman's algorithm gives the same result as
 applying the algorithm first then spliting the leaf
 -/
 
+/--
+Swapping two pairs of symbols `a b` and `c d` in a Huffman tree
+does not increase the cost, if:
+
+- `a` and `b` are minima in the tree,
+- `c` and `d` are at the bottom (depth equals height),
+- `c ≠ d`.
+
+This proves that rearranging minima and bottom nodes doesn't increase the total cost.
+-/
 lemma cost_swapFourSyms_le {α} [DecidableEq α]
   (t : HuffmanTree α) (a b c d : α)
   (h_consistent : consistent t) (h_minima : minima t a b) (hc : c ∈ alphabet t)
@@ -55,6 +64,16 @@ lemma cost_swapFourSyms_le {α} [DecidableEq α]
           _ ≤ cost t := by aesop
   · grind[swapSyms, cost_swapSyms_le,depth_le_height,swapFourSyms,cost_swapLeaves]
 
+/--
+Splitting a leaf node `a` into two leaves `a` and `b` preserves optimality, if:
+
+- `t` is optimum,
+- `a ∈ alphabet t` and `b ∉ alphabet t`,
+- `freq t a = wa + wb`,
+- All other frequencies are higher or the same as `wa` and `wb`.
+
+The new tree `splitLeaf t wa a wb b` is also optimal.
+-/
 @[simp]
 lemma optimum_splitLeaf {α : Type} [DecidableEq α]
   (t : HuffmanTree α) (a b : α) (wa wb : ℕ)
@@ -128,6 +147,12 @@ lemma optimum_splitLeaf {α : Type} [DecidableEq α]
         exact cost_swapFourSyms_le u a b c d h_consistent_u h_minima hc_u
           hd_u hc_depth hd_depth h_dc.symm
 
+/--
+Splitting a leaf commutes with Huffman construction.
+Applying `splitLeaf` to a Huffman tree yields the same result
+as first splitting the leaf in the forest and then running `huffman`,
+if `a ∈ alphabetF ts` and `freqF ts a = wa + wb`.
+-/
 @[simp]
 lemma splitLeaf_huffman_commute {α : Type} [DecidableEq α]
   (ts : Forest α) (a b : α) (wa wb : Nat) (hne : ts ≠ [])
