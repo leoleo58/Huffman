@@ -3,15 +3,18 @@ import HuffmanAlgorithm.Basic
 /-!
 # Huffman Algorithm Construction
 
-This file contains the algorithm of the Huffman Tree.
+This file contains the algorithm of the Huffman Tree construction.
 It defines functions used in the construction of Huffman trees,
-such as cached weight, tree union, and insertion of tree into forest.
+such as cached weight, tree union, and insertion of tree into forest,
+as well as the condition `sortedByWeight`, which states that a forest
+is sorted according to the weights of its trees.
 Based on these functions, it formalizes the Huffman algorithm.
 The file also includes lemmas that establish basic correctness and
 structural properties of these constructions.
 
 ## Definitions
 
+- `sortedByWeight ts` : Predicate stating that a list of trees `ts` is sorted by weight.
 - `cachedWeight t`    : Computes the weight of tree `t`.
 - `uniteTrees t1 t2`  : Combines two Huffman trees into a single tree with summed weight.
 - `insortTree t ts`   : Inserts a tree `t` into forest `ts`.
@@ -19,7 +22,35 @@ structural properties of these constructions.
 -/
 
 /--
-The weight of a node that is stored in the node.
+Condition stating that a forest `ts` is sorted by weight.
+-/
+def sortedByWeight {α} : Forest α → Prop
+  | [] => true
+  | [_] => true
+  | t1 :: t2 :: ts => weight t1 ≤ weight t2 ∧ sortedByWeight (t2 :: ts)
+
+/--
+If a forest `(t :: ts)` is sorted by weight, then its tail is also sorted by weight.
+-/
+@[simp]
+lemma sortedByWeight_Cons_imp_sortedByWeight {α}
+  (t : HuffmanTree α) (ts : Forest α) :
+  sortedByWeight (t :: ts) → sortedByWeight ts := by
+  cases ts <;> simp [sortedByWeight]
+
+/--
+If a forest `(t :: ts)` is sorted by weight, then every tree
+in the tail has weight greater than or equal to the weight of `t`.
+`t` has minimal weight among all trees in the forest.
+-/
+@[simp]
+lemma sortedByWeight_Cons_imp_forall_weight_ge {α}
+  (t : HuffmanTree α) (ts : Forest α) :
+  sortedByWeight (t :: ts) → ∀u ∈ ts, weight u ≥ weight t := by
+  induction ts generalizing t <;> grind[sortedByWeight]
+
+/--
+The weight that is stored in the node.
 -/
 def cachedWeight {α} : HuffmanTree α → Nat
   | HuffmanTree.leaf w _ => w
@@ -36,7 +67,7 @@ lemma height_0_imp_cachedWeight_eq_weight {α} (t : HuffmanTree α) :
 /--
 Combine two Huffman trees into a single tree.
 
-The final tree has as children the input trees and its weight is the sum of their weights.
+The final tree has as children the input trees and sum of their weights as its weight.
 -/
 def uniteTrees {α} (t1 t2 : HuffmanTree α) : HuffmanTree α :=
   HuffmanTree.node (cachedWeight t1 + cachedWeight t2) t1 t2
@@ -72,6 +103,10 @@ def insortTree {α} (u : HuffmanTree α) : List (HuffmanTree α) → List (Huffm
       else
         t :: insortTree u ts
 
+/--
+Inserting a tree into a list `ts` using `insortTree`
+increases the length of the list by one.
+-/
 @[simp]
 lemma insortTree_length {α} (u : HuffmanTree α) (ts : List (HuffmanTree α)) :
     (insortTree u ts).length = ts.length + 1 := by
@@ -80,6 +115,10 @@ lemma insortTree_length {α} (u : HuffmanTree α) (ts : List (HuffmanTree α)) :
   | cons t' ts' ih =>
       aesop (add norm[insortTree])
 
+/--
+Inserting a tree into any list `ts` using `insortTree`
+produces a non-empty list.
+-/
 @[simp]
 lemma insortTree_ne_nil {α} (u : HuffmanTree α) (ts : List (HuffmanTree α)) :
     insortTree u ts ≠ [] := by
@@ -93,14 +132,13 @@ Inserting a tree into a forest joins its alphabet to the forest alphabet.
 @[simp]
 lemma alphabetF_insortTree {α : Type} [DecidableEq α] (u : HuffmanTree α) (ts : Forest α) :
   alphabetF (insortTree u ts) = alphabet u ∪ alphabetF ts := by
-  induction ts <;> aesop(add norm[insortTree, alphabetF,alphabet])
+  induction ts <;> aesop(add norm[insortTree, alphabetF, alphabet])
 
 @[simp]
 lemma consistentF_insortTree {α : Type} [DecidableEq α] (u : HuffmanTree α) (ts : Forest α) :
   consistentF (insortTree u ts) = consistentF ( u :: ts ):= by
   induction ts <;>
-  simp[insortTree] ;
-  grind[consistentF,alphabetF_insortTree, alphabetF]
+  grind[consistentF, alphabetF_insortTree, alphabetF, insortTree]
 
 @[simp]
 lemma freqF_insortTree {α : Type} [DecidableEq α] (u : HuffmanTree α) (ts : Forest α) :
@@ -112,6 +150,17 @@ lemma freqF_insortTree {α : Type} [DecidableEq α] (u : HuffmanTree α) (ts : F
 lemma heightF_insortTree {α : Type} (u : HuffmanTree α) (ts : Forest α) :
   heightF (insortTree u ts) = max (height u) (heightF ts) := by
   induction ts <;> aesop (add norm[heightF, max_left_comm, height, insortTree])
+
+/--
+Inserting a tree into a forest that is sorted by weight preserves sorting.
+-/
+@[simp]
+lemma sortedByWeight_insortTree {α}
+  (t : HuffmanTree α) (ts : Forest α)
+  (h_sbw : sortedByWeight ts) (h_height_t : height t = 0) (h_height_ts : heightF ts = 0) :
+  sortedByWeight (insortTree t ts) := by
+  induction ts using sortedByWeight.induct <;>
+    grind[heightF, insortTree,height_0_imp_cachedWeight_eq_weight,sortedByWeight]
 
 /--
 Construct a Huffman tree from a non-empty forest.

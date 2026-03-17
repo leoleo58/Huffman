@@ -148,7 +148,7 @@ lemma optimum_splitLeaf {α : Type} [DecidableEq α]
           hd_u hc_depth hd_depth h_dc.symm
 
 /--
-Splitting a leaf commutes with Huffman construction.
+Splitting a leaf commutes with Huffman tree construction.
 Applying `splitLeaf` to a Huffman tree yields the same result
 as first splitting the leaf in the forest and then running `huffman`,
 if `a ∈ alphabetF ts` and `freqF ts a = wa + wb`.

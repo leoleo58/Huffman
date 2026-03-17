@@ -62,6 +62,12 @@ lemma exists_in_alphabet {α} [DecidableEq α] (t : HuffmanTree α) :
   ∃ a, a ∈ alphabet t := by
   induction t <;> aesop(add norm[alphabet])
 
+/--
+For two Huffman trees with disjoint alphabets, `a` is either:
+- in `t1`
+- in `t2`
+- neither in `t1` nor `t2`
+-/
 lemma alphabet_cases {α} [DecidableEq α]
   (a : α) (t1 t2 : HuffmanTree α)
   (hdis : alphabet t1 ∩ alphabet t2 = ∅) :
@@ -92,28 +98,28 @@ of consistency. It is used throughout the development to simplify proofs.
 -/
 theorem huffmanTree_induct_consistent {α} [DecidableEq α]
 {P : (t : HuffmanTree α) → α → consistent t → Prop}
-  {t : HuffmanTree α} (a : α) (hc : consistent t)
-    (leaf : ∀ wb b (hc : consistent (HuffmanTree.leaf wb b)),
-      P (HuffmanTree.leaf wb b) a hc)
-    (left : ∀ w t1 t2 (hc : consistent (HuffmanTree.node w t1 t2))
-      (hc1 : consistent t1) (hc2 : consistent t2),
+  {t : HuffmanTree α} (a : α) (h_consistent : consistent t)
+    (leaf : ∀ wb b (h_consistent : consistent (HuffmanTree.leaf wb b)),
+      P (HuffmanTree.leaf wb b) a h_consistent)
+    (left : ∀ w t1 t2 (h_consistent : consistent (HuffmanTree.node w t1 t2))
+      (h_consistent_t1 : consistent t1) (h_consistent_t2 : consistent t2),
       alphabet t1 ∩ alphabet t2 = ∅ →
       a ∈ alphabet t1 → a ∉ alphabet t2 →
-      P t1 a hc1 → P t2 a hc2 →
-      P (HuffmanTree.node w t1 t2) a hc)
-    (right : ∀ w t1 t2 (hc : consistent (HuffmanTree.node w t1 t2))
-      (hc1 : consistent t1) (hc2 : consistent t2),
+      P t1 a h_consistent_t1 → P t2 a h_consistent_t2 →
+      P (HuffmanTree.node w t1 t2) a h_consistent)
+    (right : ∀ w t1 t2 (h_consistent : consistent (HuffmanTree.node w t1 t2))
+      (h_consistent_t1 : consistent t1) (h_consistent_t2 : consistent t2),
       alphabet t1 ∩ alphabet t2 = ∅ →
       a ∉ alphabet t1 → a ∈ alphabet t2 →
-      P t1 a hc1 → P t2 a hc2 →
-      P (HuffmanTree.node w t1 t2) a hc)
-    (none : ∀ w t1 t2 (hc : consistent (HuffmanTree.node w t1 t2))
-      (hc1 : consistent t1) (hc2 : consistent t2),
+      P t1 a h_consistent_t1 → P t2 a h_consistent_t2 →
+      P (HuffmanTree.node w t1 t2) a h_consistent)
+    (none : ∀ w t1 t2 (h_consistent : consistent (HuffmanTree.node w t1 t2))
+      (h_consistent_t1 : consistent t1) (h_consistent_t2 : consistent t2),
       alphabet t1 ∩ alphabet t2 = ∅ →
       a ∉ alphabet t1 → a ∉ alphabet t2 →
-      P t1 a hc1 → P t2 a hc2 →
-      P (HuffmanTree.node w t1 t2) a hc)
-  : P t a hc := by
+      P t1 a h_consistent_t1 → P t2 a h_consistent_t2 →
+      P (HuffmanTree.node w t1 t2) a h_consistent)
+  : P t a h_consistent := by
     induction t <;> grind[not_mem_inter_empty, consistent, alphabet_cases]
 
 /--
@@ -183,33 +189,23 @@ lemma height_gt_0_alphabet_eq_imp_height_gt_0 {α} [DecidableEq α] (t u : Huffm
   | node w t1 t2 =>
       obtain ⟨b, h_b⟩ := exists_in_alphabet t1
       obtain ⟨c, h_c⟩ := exists_in_alphabet t2
-      let ⟨h_disj, h_consistent_t1, h_consistent_t2⟩ := h_consistent
-      have bc : b ≠ c := by
-        intro h_bc
-        have h_b_t2 : b ∈ alphabet t2 := by simpa [h_bc] using h_c
-        have h_b_t1_t2 := Finset.mem_inter_of_mem h_b h_b_t2
-        simp [h_disj] at h_b_t1_t2
       cases u with
       | leaf w a =>
           simp [alphabet] at h_alphabet_t_u
-          have hba : b ∈ ({a} : Finset α) := by
-            rw [← h_alphabet_t_u]
-            exact Finset.mem_union_left _ h_b
-          have hca : c ∈ ({a} : Finset α) := by
-            rw [← h_alphabet_t_u]
-            exact Finset.mem_union_right _ h_c
-          grind
+          have hba : b ∈ ({a} : Finset α) := by grind
+          have hca : c ∈ ({a} : Finset α) := by grind
+          grind[not_mem_inter_empty, consistent]
       | node w t3 t4 => simp [height]
 
 /--
-`freq t a` frequency associated with symbol `a` in tree `t`, `0` if it's not in the tree.
+The frequency of symbol `a` in tree `t`, `0` if it's not in the tree.
 -/
 def freq {α} [DecidableEq α] : HuffmanTree α → α → Nat
   | HuffmanTree.leaf w a, b => if b = a then w else 0
   | HuffmanTree.node _ t1 t2, b => freq t1 b + freq t2 b
 
 /--
-freqF is the total frequency of symbol `a` in a forest,
+The total frequency of symbol `a` in a forest,
 defined as the sum of its frequencies from all trees.
 -/
 def freqF {α} [DecidableEq α] : Forest α → α → Nat
@@ -239,7 +235,8 @@ lemma freq_0_left {α} [DecidableEq α] (a : α) (t1 t2 : HuffmanTree α)
   grind[notin_alphabet_imp_freq_0, not_mem_inter_empty]
 
 /--
-If a forest is consistent and has height zero, then for symbol `a` from the forest alphabet,
+If a forest is consistent and has height zero,
+then for symbol `a` from the forest alphabet,
 the leaf `a` and its frequency is an element of the forest.
 -/
 lemma heightF_0_imp_Leaf_freqF_in_set {α} [DecidableEq α] (ts : Forest α) (a : α)
@@ -275,19 +272,14 @@ lemma weight_eq_Sum_freq {α} [DecidableEq α] (t : HuffmanTree α) :
   | leaf w x => simp [weight, alphabet, freq]
   | node w t1 t2 ih1 ih2 =>
       let ⟨hd, h_consistent_t1, h_consistent_t2⟩ := h_consistent
-      have h3 : Disjoint (alphabet t1) (alphabet t2) :=
-        Finset.disjoint_iff_inter_eq_empty.mpr hd
       have h_sum_1 : (∑ a ∈ alphabet t1, freq t2 a) = 0 := by
         apply Finset.sum_eq_zero
-        intro a ha
-        exact freq_0_right a t1 t2 hd ha
+        grind[freq, freq_0_right]
       have h_sum_2 : (∑ a ∈ alphabet t2, freq t1 a) = 0 := by
         apply Finset.sum_eq_zero
-        intro a ha
-        exact freq_0_left a t1 t2 hd ha
-      simp [weight, alphabet, freq]
-      rw [ih1 h_consistent_t1, ih2 h_consistent_t2, Finset.sum_union h3]
-      simp [Finset.sum_add_distrib, h_sum_1, h_sum_2]
+        grind[freq, freq_0_left]
+      aesop(add norm[weight, alphabet, freq,
+            Finset.sum_union, Finset.disjoint_iff_inter_eq_empty])
 
 /--
 The cost of a Huffman tree, also called the weighted path length.
@@ -349,8 +341,7 @@ theorem cost_eq_Sum_freq_mult_depth
               rw [sum1, sum2]
         _ = ∑ a ∈ alphabet t1 ∪ alphabet t2, freq (HuffmanTree.node w t1 t2) a *
               depth (HuffmanTree.node w t1 t2) a := by
-              rw [Finset.sum_union]
-              exact Finset.disjoint_iff_inter_eq_empty.mpr h_disj
+              aesop (add norm[Finset.sum_union,Finset.disjoint_iff_inter_eq_empty])
         _ = ∑ a ∈ alphabet (HuffmanTree.node w t1 t2),
             freq (HuffmanTree.node w t1 t2) a *
             depth (HuffmanTree.node w t1 t2) a := by simp [alphabet]

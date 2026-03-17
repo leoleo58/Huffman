@@ -183,9 +183,9 @@ lemma sibling_swapLeaves_sibling {α} [DecidableEq α]
             · have h_height_t2_le : height t2 > 0 := Nat.pos_of_ne_zero h_height_t2
               by_cases h_b_c : b = c
               · aesop(add norm[alphabet])
-              · have h_sib: sibling (HuffmanTree.node w (HuffmanTree.leaf wc c) t2) b
+              · have h_sibling: sibling (HuffmanTree.node w (HuffmanTree.leaf wc c) t2) b
                   = sibling t2 b := by aesop
-                rw [h_sib]
+                rw [h_sibling]
                 have h_c_alp_t2 : c ∉ alphabet t2 := by
                   intro h1
                   have h2 : c ∈ alphabet (HuffmanTree.leaf wc c) ∩ alphabet t2 :=
@@ -195,11 +195,11 @@ lemma sibling_swapLeaves_sibling {α} [DecidableEq α]
                 split_ifs with h_a_c h_sib_c <;> aesop (add norm [sibling, alphabet])
         | node w t1 t2 => simp [height] at h_height_t1
       · have h_height_t1_le : height t1 > 0 := Nat.pos_of_ne_zero h_height_t1
-        by_cases hb1 : b ∈ alphabet t1
-        · simp [hb1, h_height_t1_le, swapLeaves]
+        by_cases h_b_t1 : b ∈ alphabet t1
+        · simp [h_b_t1, h_height_t1_le, swapLeaves]
           grind[height_gt_0_in_alphabet_imp_sibling_left,sibling_ne_imp_sibling_in_alphabet]
-        · by_cases hb2 : b ∈ alphabet t2
-          · have hsa1 : sibling t2 b ∉ alphabet t1 := by
+        · by_cases h_b_t2 : b ∈ alphabet t2
+          · have h_s_alphabet_1 : sibling t2 b ∉ alphabet t1 := by
               grind[in_alphabet_imp_sibling_in_alphabet,not_mem_inter_empty]
             simp [h_height_t1_le, swapLeaves]
             grind[height_gt_0_notin_alphabet_imp_sibling_left]
@@ -353,7 +353,7 @@ lemma sibling_swapFourSyms_when_4th_is_sibling {α} [DecidableEq α]
       calc
         sibling ts b = sibling (swapSyms t a c) d' := by
           have := freq_swapLeaves t (freq t a) (freq t c) a c h_consistent
-          by_cases hac : a = c
+          by_cases h_ac : a = c
           · simp [ts, swapFourSyms, d', h]
             aesop (add norm [swapLeaves, sibling,swapSyms])
           · set t1 := swapLeaves t (freq t a) a (freq t c) c with ht1
@@ -369,5 +369,5 @@ lemma sibling_swapFourSyms_when_4th_is_sibling {α} [DecidableEq α]
     aesop (add norm [swapLeaves, swapSyms, sibling])
   · simp [swapFourSyms]
     split
-    · by_cases hbc : b = c <;> aesop
+    · by_cases h_bc : b = c <;> aesop
     · aesop (add norm [swapLeaves, swapSyms, sibling])

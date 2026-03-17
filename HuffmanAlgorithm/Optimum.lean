@@ -19,9 +19,9 @@ The Huffman tree constructed from a forest `ts` using the `huffman` function
 is optimal.
 -/
 theorem optimum_huffman {α : Type} [d : DecidableEq α] (ts : Forest α)
-  (hcf : consistentF ts)
-  (hh : heightF ts = 0)
-  (hs : sortedByWeight ts)
+  (h_consistent_ts : consistentF ts)
+  (h_height : heightF ts = 0)
+  (h_sorted : sortedByWeight ts)
   (hne : ts ≠ []) :
   optimum (huffman ts hne) := by
   induction h : ts.length using Nat.strong_induction_on generalizing ts with
@@ -37,51 +37,54 @@ theorem optimum_huffman {α : Type} [d : DecidableEq α] (ts : Forest α)
               | leaf wa a =>
                   cases tb with
                   | leaf wb b =>
-                    simp [consistentF] at hcf
-                    let ⟨hcfd , hca, hdbf, hcb, hcfts ⟩ := hcf
+                    simp [consistentF] at h_consistent_ts
+                    let ⟨h_disjoint , h_consistent_ta, h_disjoint_tb_ts,
+                      h_consistent_tb, h_consistent_ts'' ⟩ := h_consistent_ts
                     let ta := HuffmanTree.leaf wa a
                     let tb := HuffmanTree.leaf wb b
                     let us := insortTree (uniteTrees ta tb) ts''
                     let us' := insortTree (HuffmanTree.leaf (wa + wb) a) ts''
-                    have hus' : us' ≠ [] := by simp [us']
-                    let ts := splitLeaf (huffman us' hus') wa a wb b
+                    have h_us' : us' ≠ [] := by simp [us']
+                    let ts := splitLeaf (huffman us' h_us') wa a wb b
                     have e1 : huffman (HuffmanTree.leaf wa a
                       :: HuffmanTree.leaf wb b :: ts'') hne  =
                       huffman us (insortTree_ne_nil _ _) := by
                         aesop (add norm[huffman, us, uniteTrees])
-                    -- hafts used in e2 and hopt1 case c = a
-                    have hafts : a ∉ alphabetF ts'' := by aesop (add norm[alphabet, alphabetF])
+                    have h_a_alphabet_ts : a ∉ alphabetF ts'' := by
+                      aesop (add norm[alphabet, alphabetF])
                     have e2 : huffman us (insortTree_ne_nil _ _) = ts := by
                       aesop (add norm[splitLeaf, uniteTrees, freq, consistent, consistentF,
                                       alphabet, alphabetF])
-                    have hoptus' : optimum (huffman us' hus') := by
+                    have h_optimum_huffman_us' : optimum (huffman us' h_us') := by
                       have hconus : consistentF us' := by
                         aesop (add norm[consistentF, consistent, alphabet, alphabetF])
-                      have hhus' : heightF us' = 0 := by aesop(add norm[heightF,height])
-                      have hlenus'1 : us'.length < n := by aesop
+                      have h_height_us' : heightF us' = 0 := by aesop(add norm[heightF,height])
+                      have h_len_us' : us'.length < n := by aesop
                       grind[sortedByWeight_insortTree, heightF, height,
                             sortedByWeight_Cons_imp_sortedByWeight]
-                    have hopt1 : optimum ts := by
-                      have ho:= optimum_splitLeaf (huffman us' hus') a b wa wb
-                      have ho1: ∀ c ∈ alphabetF us', wa ≤ freqF us' c ∧ wb ≤ freqF us' c := by
+                    have h_optimum_ts : optimum ts := by
+                      have h_optimum:= optimum_splitLeaf (huffman us' h_us') a b wa wb
+                      have h_freq_us': ∀ c ∈ alphabetF us',
+                        wa ≤ freqF us' c ∧ wb ≤ freqF us' c := by
                         intro c hc
-                        by_cases hca : c = a
+                        by_cases h_ca : c = a
                         · aesop(add norm[freq, freqF,alphabet, alphabetF])
-                        · have hleaf : HuffmanTree.leaf (freqF us' c) c ∈ ts'' := by
+                        · have h_leaf : HuffmanTree.leaf (freqF us' c) c ∈ ts'' := by
                             aesop(add norm[heightF,freq,height,alphabet, alphabetF,
                                             heightF_0_imp_Leaf_freqF_in_set])
-                          have hw := sortedByWeight_Cons_imp_forall_weight_ge tb ts''
-                                      (sortedByWeight_Cons_imp_sortedByWeight ta (tb :: ts'') hs)
-                          have hwafreq: wa ≤ freqF us' c := by
-                            have hweighttatb : weight ta ≤ weight tb :=
+                          have h_w := sortedByWeight_Cons_imp_forall_weight_ge tb ts''
+                                    (sortedByWeight_Cons_imp_sortedByWeight ta
+                                      (tb :: ts'') h_sorted)
+                          have h_wa_freq: wa ≤ freqF us' c := by
+                            have h_weight_ta_tb : weight ta ≤ weight tb :=
                               sortedByWeight_Cons_imp_forall_weight_ge ta
-                              (tb :: ts'') hs tb (by simp)
+                              (tb :: ts'') h_sorted tb (by simp)
                             grind[height_0_imp_cachedWeight_eq_weight, weight]
                           grind[weight]
-                      have hbus': b ∉ alphabetF us' := by
+                      have h_b_alphabet_us': b ∉ alphabetF us' := by
                         aesop(add norm[alphabet,alphabetF])
                       aesop(add norm[consistentF, consistent, alphabet, alphabetF,
                                       consistent_huffman,huffman,freq,freqF])
-                    simpa [e1, e2] using hopt1
-                  | node w t1 t2 => simp [heightF, height] at hh
-              | node w t1 t2 => simp [heightF, height] at hh
+                    simpa [e1, e2] using h_optimum_ts
+                  | node w t1 t2 => simp [heightF, height] at h_height
+              | node w t1 t2 => simp [heightF, height] at h_height

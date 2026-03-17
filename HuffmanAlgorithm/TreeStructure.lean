@@ -4,9 +4,7 @@ import HuffmanAlgorithm.Algorithm
 # Structural properties and operations of Huffman trees
 
 This file formalizes structural properties of Huffman trees.
-It defines sibling relations, merging sibling nodes, and splitting leaf nodes,
-as well as the condition `sortedByWeight`, which states that a forest
-is sorted according to the weights of its trees.
+It defines sibling relations, merging sibling nodes, and splitting leaf nodes.
 Lemmas accompanying each definition formalize their structural properties.
 
 ## Main definitions
@@ -14,7 +12,6 @@ Lemmas accompanying each definition formalize their structural properties.
 - `sibling t a`            : Returns the sibling of symbol `a` in tree `t`.
 - `mergeSibling t a`       : Combines a pair of sibling nodes into a single node.
 - `splitLeaf t wa a wb b`  : Splits a leaf into two leaves.
-- `sortedByWeight ts`      : Predicate stating that a list of trees `ts` is sorted by weight.
 -/
 
 /--
@@ -96,44 +93,44 @@ It is used to simplify proofs.
 -/
 theorem sibling_induct_consistent {α} [DecidableEq α]
   {P : (t : HuffmanTree α) → α → consistent t → Prop}
-  {t : HuffmanTree α} (a : α) (hc : consistent t)
-  (leaf : ∀ w b (hc : consistent (HuffmanTree.leaf w b)),
-    P (HuffmanTree.leaf w b) a hc)
+  {t : HuffmanTree α} (a : α) (h_consistent : consistent t)
+  (leaf : ∀ w b (h_consistent : consistent (HuffmanTree.leaf w b)),
+    P (HuffmanTree.leaf w b) a h_consistent)
   (step1 : ∀ w wb b wc c
-  (hc : consistent (HuffmanTree.node w (HuffmanTree.leaf wb b) (HuffmanTree.leaf wc c))),
-    b ≠ c → P (HuffmanTree.node w (HuffmanTree.leaf wb b) (HuffmanTree.leaf wc c)) a hc)
-  (step21 : ∀ w t1 t2 (hc : consistent (HuffmanTree.node w t1 t2))
-    (hc1 : consistent t1) (hc2 : consistent t2),
+  (h_consistent : consistent (HuffmanTree.node w (HuffmanTree.leaf wb b) (HuffmanTree.leaf wc c))),
+    b ≠ c → P (HuffmanTree.node w (HuffmanTree.leaf wb b) (HuffmanTree.leaf wc c)) a h_consistent)
+  (step21 : ∀ w t1 t2 (h_consistent : consistent (HuffmanTree.node w t1 t2))
+    (h_consistent_t1 : consistent t1) (h_consistent_t2 : consistent t2),
     alphabet t1 ∩ alphabet t2 = ∅ →
     (height t1 > 0 ∨ height t2 > 0) →
     a ∈ alphabet t1 →
     sibling t1 a ∈ alphabet t1 →
     a ∉ alphabet t2 →
     sibling t1 a ∉ alphabet t2 →
-    P t1 a hc1 →
-    P (HuffmanTree.node w t1 t2) a hc)
-  (step22 : ∀ w t1 t2 (hc : consistent (HuffmanTree.node w t1 t2))
-    (hc1 : consistent t1) (hc2 : consistent t2),
+    P t1 a h_consistent_t1 →
+    P (HuffmanTree.node w t1 t2) a h_consistent)
+  (step22 : ∀ w t1 t2 (h_consistent : consistent (HuffmanTree.node w t1 t2))
+    (h_consistent_t1 : consistent t1) (h_consistent_t2 : consistent t2),
     alphabet t1 ∩ alphabet t2 = ∅ →
     (height t1 > 0 ∨ height t2 > 0) →
     a ∉ alphabet t1 →
     sibling t2 a ∉ alphabet t1 →
     a ∈ alphabet t2 →
     sibling t2 a ∈ alphabet t2 →
-    P t2 a hc2 →
-    P (HuffmanTree.node w t1 t2) a hc)
-  (step23 : ∀ w t1 t2 (hc : consistent (HuffmanTree.node w t1 t2))
-    (hc1 : consistent t1) (hc2 : consistent t2),
+    P t2 a h_consistent_t2 →
+    P (HuffmanTree.node w t1 t2) a h_consistent)
+  (step23 : ∀ w t1 t2 (h_consistent : consistent (HuffmanTree.node w t1 t2))
+    (h_consistent_t1 : consistent t1) (h_consistent_t2 : consistent t2),
     alphabet t1 ∩ alphabet t2 = ∅ →
     (height t1 > 0 ∨ height t2 > 0) →
     a ∉ alphabet t1 →
     a ∉ alphabet t2 →
-    P (HuffmanTree.node w t1 t2) a hc)
-  : P t a hc := by
+    P (HuffmanTree.node w t1 t2) a h_consistent)
+  : P t a h_consistent := by
   induction t with
-  | leaf w b => exact leaf w b hc
+  | leaf w b => exact leaf w b h_consistent
   | node w1 t1 t2 ih1 ih2 =>
-      let ⟨h_disj, h_consistent_t1, h_consistent_t2⟩ := hc
+      let ⟨h_disj, h_consistent_t1, h_consistent_t2⟩ := h_consistent
       cases t1 <;> cases t2 <;>
       grind[mem_inter_empty, in_alphabet_imp_sibling_in_alphabet,
             alphabet_cases, height, alphabet, consistent]
@@ -230,8 +227,8 @@ lemma alphabet_mergeSibling {α} [DecidableEq α]
 lemma consistent_mergeSibling {α} [DecidableEq α]
   (t : HuffmanTree α) (a : α) :
   consistent t → consistent (mergeSibling t a) := by
-  intro hc
-  induction a, hc using sibling_induct_consistent <;>
+  intro h_consistent
+  induction a, h_consistent using sibling_induct_consistent <;>
   grind[either_height_gt_0_imp_mergeSibling, alphabet_mergeSibling,
         notin_alphabet_imp_mergeSibling_id, consistent, mergeSibling, alphabet]
 
@@ -419,34 +416,3 @@ lemma splitLeafF_nonempty {α : Type} [DecidableEq α]
   {ts : Forest α} {wa wb : Nat} {a b : α} (hne : ts ≠ []) :
   splitLeafF ts wa a wb b ≠ [] := by
   cases ts <;> grind[splitLeafF]
-
-/--
-Condition stating that a forest `ts` is sorted by weight.
--/
-def sortedByWeight {α} : Forest α → Prop
-  | [] => true
-  | [_] => true
-  | t1 :: t2 :: ts => weight t1 ≤ weight t2 ∧ sortedByWeight (t2 :: ts)
-
-@[simp]
-lemma sortedByWeight_Cons_imp_sortedByWeight {α}
-  (t : HuffmanTree α) (ts : Forest α) :
-  sortedByWeight (t :: ts) → sortedByWeight ts := by
-  cases ts <;> simp [sortedByWeight]
-
-@[simp]
-lemma sortedByWeight_Cons_imp_forall_weight_ge {α}
-  (t : HuffmanTree α) (ts : Forest α) :
-  sortedByWeight (t :: ts) → ∀u ∈ ts, weight u ≥ weight t := by
-  induction ts generalizing t <;> grind[sortedByWeight]
-
-/--
-Inserting a tree into a forest that is sorted by weight preserves sorting.
--/
-@[simp]
-lemma sortedByWeight_insortTree {α}
-  (t : HuffmanTree α) (ts : Forest α)
-  (h_sbw : sortedByWeight ts) (h_height_t : height t = 0) (h_height_ts : heightF ts = 0) :
-  sortedByWeight (insortTree t ts) := by
-  induction ts using sortedByWeight.induct <;>
-    grind[heightF, insortTree,height_0_imp_cachedWeight_eq_weight,sortedByWeight]
