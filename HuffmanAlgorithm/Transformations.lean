@@ -32,9 +32,8 @@ lemma swapLeaves_id_when_notin_alphabet {α} [DecidableEq α]
 
 @[simp]
 lemma swapLeaves_id {α : Type} [d : DecidableEq α]
-  (t : HuffmanTree α) (a : α) :
-  consistent t → swapLeaves t (freq t a) a (freq t a) a = t := by
-  intro h_consistent
+  (t : HuffmanTree α) (a : α) (h_consistent : consistent t) :
+  swapLeaves t (freq t a) a (freq t a) a = t := by
   induction a, h_consistent using huffmanTree_induct_consistent <;>
   aesop (add norm [freq, swapLeaves])
 
@@ -61,10 +60,9 @@ lemma consistent_swapLeaves {α} [DecidableEq α]
 
 @[simp]
 lemma depth_swapLeaves_neither {α} [DecidableEq α]
-  (t : HuffmanTree α) (wa wb : ℕ) (a b c : α) :
-  consistent t → c ≠ a → c ≠ b →
+  (t : HuffmanTree α) (wa wb : ℕ) (a b c : α)
+  (h_consistent : consistent t) (h_ca : c ≠ a) (h_cb : c ≠ b) :
   depth (swapLeaves t wa a wb b) c = depth t c := by
-  intro h_consistent
   induction a, h_consistent using huffmanTree_induct_consistent <;>
   aesop (add norm [depth, swapLeaves])
 
@@ -75,13 +73,12 @@ lemma height_swapLeaves {α} [DecidableEq α] (t : HuffmanTree α) (wa wb : ℕ)
 
 @[simp]
 lemma freq_swapLeaves {α} [DecidableEq α]
-  (t : HuffmanTree α) (wa wb : ℕ) (a b : α) :
-  consistent t → a ≠ b →
+  (t : HuffmanTree α) (wa wb : ℕ) (a b : α)
+  (h_consistent : consistent t) (h_ab : a ≠ b) :
   freq (swapLeaves t wa a wb b) =
   fun c =>  if c = a then if b ∈ alphabet t then wa else 0
             else if c = b then if a ∈ alphabet t then wb else 0
             else freq t c := by
-  intro h_consistent h_a_b
   ext c
   induction t with
   | leaf w x => aesop (add norm [freq, alphabet, swapLeaves])
@@ -94,8 +91,8 @@ according to the frequencies of the swapped leaves.
 -/
 @[simp]
 lemma weight_swapLeaves {α} [DecidableEq α]
-  (t : HuffmanTree α) (wa wb : ℕ) (a b : α) :
-  consistent t → a ≠ b →
+  (t : HuffmanTree α) (wa wb : ℕ) (a b : α)
+  (h_consistent : consistent t) (h_ab : a ≠ b) :
   if a ∈ alphabet t then
     if b ∈ alphabet t then
       weight (swapLeaves t wa a wb b) + freq t a + freq t b =
@@ -107,7 +104,6 @@ lemma weight_swapLeaves {α} [DecidableEq α]
       weight (swapLeaves t wa a wb b) + freq t b = weight t + wa
     else
       weight (swapLeaves t wa a wb b) = weight t := by
-  intro h_consistent h_a_b
   induction a, h_consistent using huffmanTree_induct_consistent <;>
   grind[weight, alphabet, freq, swapLeaves, mem_inter_empty, notin_alphabet_imp_freq_0]
 
@@ -117,8 +113,8 @@ updating cost according to the swapped weights and original depths.
 -/
 @[simp]
 lemma cost_swapLeaves {α} [DecidableEq α]
-  (t : HuffmanTree α) (wa wb : ℕ) (a b : α) :
-  consistent t → a ≠ b →
+  (t : HuffmanTree α) (wa wb : ℕ) (a b : α)
+  (h_consistent : consistent t) (h_ab : a ≠ b) :
   if a ∈ alphabet t then
     if b ∈ alphabet t then
       cost (swapLeaves t wa a wb b) + freq t a * depth t a
@@ -133,29 +129,28 @@ lemma cost_swapLeaves {α} [DecidableEq α]
         cost t + wa * depth t b
     else
       cost (swapLeaves t wa a wb b) = cost t := by
-  intro h_consistent h_a_b
   induction t with
   | leaf w c => aesop (add norm [cost,alphabet,freq,depth, swapLeaves])
   | node w t1 t2 ih1 ih2 =>
       obtain ⟨h_disj, h_consistent_t1, h_consistent_t2⟩ := h_consistent
       simp [alphabet, cost, freq, depth, swapLeaves]
-      have w1 := weight_swapLeaves t1 wa wb a b h_consistent_t1 h_a_b
-      have w2 := weight_swapLeaves t2 wa wb a b h_consistent_t2 h_a_b
+      have w1 := weight_swapLeaves t1 wa wb a b h_consistent_t1 h_ab
+      have w2 := weight_swapLeaves t2 wa wb a b h_consistent_t2 h_ab
       by_cases h_a_t1 : a ∈ alphabet t1
-      · have h_a_t2 : a ∉ alphabet t2 := by grind[not_mem_inter_empty]
+      · have h_a_t2 : a ∉ alphabet t2 := by grind[mem_inter_empty]
         by_cases h_b_t1 : b ∈ alphabet t1
-        · have h_b_t2 : b ∉ alphabet t2 := by grind[not_mem_inter_empty]
+        · have h_b_t2 : b ∉ alphabet t2 := by grind[mem_inter_empty]
           simp [h_a_t1, h_a_t2, h_b_t1, h_b_t2]
           grind
         · by_cases h_b_t2 : b ∈ alphabet t2 <;> simp_all <;> grind
       · by_cases h_a_t2 : a ∈ alphabet t2
         · by_cases h_b_t1 : b ∈ alphabet t1
-          · have h_b_t2 : b ∉ alphabet t2 := by grind[not_mem_inter_empty]
+          · have h_b_t2 : b ∉ alphabet t2 := by grind[mem_inter_empty]
             simp [h_a_t1, h_a_t2, h_b_t1, h_b_t2]
             grind
           · by_cases h_b_t2 : b ∈ alphabet t2 <;> simp_all <;> grind
         · by_cases h_b_t1 : b ∈ alphabet t1
-          · have h_b_t2 : b ∉ alphabet t2 := by grind[not_mem_inter_empty]
+          · have h_b_t2 : b ∉ alphabet t2 := by grind[mem_inter_empty]
             simp [h_a_t1, h_a_t2, h_b_t1, h_b_t2]
             grind
           · by_cases h_b_t2 : b ∈ alphabet t2 <;> simp_all ; grind
@@ -167,9 +162,9 @@ after the swap, `a`’s sibling becomes `b`.
 -/
 @[simp]
 lemma sibling_swapLeaves_sibling {α} [DecidableEq α]
-  (t : HuffmanTree α) (a b : α) (wa ws : ℕ) :
-  consistent t → sibling t b ≠ b → a ≠ b → sibling (swapLeaves t wa a ws (sibling t b)) a = b := by
-  intro h_consistent h_sib_b h_a_b
+  (t : HuffmanTree α) (a b : α) (wa ws : ℕ)
+  (h_consistent : consistent t) (h_sib_b : sibling t b ≠ b) (h_a_b : a ≠ b) :
+  sibling (swapLeaves t wa a ws (sibling t b)) a = b := by
   induction t with
   | leaf w x => simp [sibling] at h_sib_b
   | node w t1 t2 ih1 ih2 =>
@@ -200,7 +195,7 @@ lemma sibling_swapLeaves_sibling {α} [DecidableEq α]
           grind[height_gt_0_in_alphabet_imp_sibling_left,sibling_ne_imp_sibling_in_alphabet]
         · by_cases h_b_t2 : b ∈ alphabet t2
           · have h_s_alphabet_1 : sibling t2 b ∉ alphabet t1 := by
-              grind[in_alphabet_imp_sibling_in_alphabet,not_mem_inter_empty]
+              grind[in_alphabet_imp_sibling_in_alphabet,mem_inter_empty]
             simp [h_height_t1_le, swapLeaves]
             grind[height_gt_0_notin_alphabet_imp_sibling_left]
           · aesop (add norm [sibling, alphabet])
@@ -219,8 +214,8 @@ lemma swapSyms_id {α} [DecidableEq α]
 
 @[simp]
 lemma alphabet_swapSyms {α} [DecidableEq α]
-  (t : HuffmanTree α) (a b : α) :
-  a ∈ alphabet t → b ∈ alphabet t →
+  (t : HuffmanTree α) (a b : α)
+  (h_a : a ∈ alphabet t) (h_b : b ∈ alphabet t) :
   alphabet (swapSyms t a b) = alphabet t := by aesop (add norm [swapSyms])
 
 @[simp]
@@ -230,14 +225,14 @@ lemma consistent_swapSyms {α} [DecidableEq α]
 
 @[simp]
 lemma depth_swapSyms_neither {α} [DecidableEq α]
-  (t : HuffmanTree α) (a b c : α) :
-  consistent t → c ≠ a → c ≠ b →
+  (t : HuffmanTree α) (a b c : α)
+  (h_consistent : consistent t) (h_ca : c ≠ a) (h_cb : c ≠ b) :
   depth (swapSyms t a b) c = depth t c := by aesop (add norm [swapSyms])
 
 @[simp]
 lemma freq_swapSyms {α} [DecidableEq α]
-  (t : HuffmanTree α) (a b : α) :
-  consistent t → a ∈ alphabet t → b ∈ alphabet t →
+  (t : HuffmanTree α) (a b : α)
+  (h_consistent : consistent t) (h_a : a ∈ alphabet t) (h_b : b ∈ alphabet t) :
   freq (swapSyms t a b) = freq t := by
     by_cases h_a_b : a = b <;> aesop (add norm [swapSyms])
 
@@ -246,8 +241,8 @@ The cost of a tree after swapping two symbols is updated according to the new de
 -/
 @[simp]
 lemma cost_swapSyms {α} [DecidableEq α]
-  (t : HuffmanTree α) (a b : α) :
-  consistent t → a ∈ alphabet t → b ∈ alphabet t →
+  (t : HuffmanTree α) (a b : α)
+  (h_consistent : consistent t) (h_a : a ∈ alphabet t) (h_b : b ∈ alphabet t) :
   cost (swapSyms t a b) + freq t a * depth t a + freq t b * depth t b =
   cost t + freq t a * depth t b + freq t b * depth t a := by
     by_cases h_a_b : a = b
@@ -313,22 +308,7 @@ lemma freq_swapFourSyms {α} [DecidableEq α]
   (h_consistent : consistent t) (h_a : a ∈ alphabet t) (h_b : b ∈ alphabet t)
   (h_c : c ∈ alphabet t) (h_d : d ∈ alphabet t) :
   freq (swapFourSyms t a b c d) = freq t := by
-  simp [swapFourSyms]
-  by_cases h_ad : a = d <;> by_cases h_bc : b = c
-  · aesop(add norm[swapSyms])
-  · aesop(add norm[swapSyms])
-  · aesop(add norm[swapSyms])
-  · simp [h_ad, swapSyms, h_bc]
-    by_cases h_ac : a = c <;> by_cases h_bd : b = d
-    · simp [h_ac, h_bd, swapLeaves_id, h_consistent]
-    · aesop
-    · simp [h_bd.symm]
-      have h_consistent1 : consistent (swapLeaves t (freq t a) a (freq t c) c) := by
-        simp [consistent_swapLeaves, h_consistent]
-      rw [swapLeaves_id (swapLeaves t (freq t a) a (freq t c) c) b h_consistent1]
-      aesop
-    · ext x
-      aesop
+  aesop (add norm[swapFourSyms])
 
 /--
 Sibling relationships is preserved after swapping 4 symbols
@@ -342,29 +322,17 @@ lemma sibling_swapFourSyms_when_4th_is_sibling {α} [DecidableEq α]
   by_cases h : a ≠ sibling t c ∧ b ≠ c
   · let d' := sibling t c
     let ts := swapFourSyms t a b c d'
-    have h_consistent1 := consistent_swapFourSyms t a b c d' h_consistent
-    have h_consistent2: consistent (swapSyms t a c) := by simp [h_consistent]
     have abba : (sibling ts a = b) = (sibling ts b = a) := by
-      grind[sibling_reciprocal]
+      grind[sibling_reciprocal,consistent_swapFourSyms]
     have s : sibling t c = sibling (swapSyms t a c) a := by
       grind[sibling_swapSyms_other_sibling, sibling_reciprocal,
-            swapSyms, swapLeaves_id]
+            swapSyms, swapLeaves_id,consistent_swapFourSyms, consistent, consistent_swapSyms]
     have h : sibling ts b = a := by
       calc
         sibling ts b = sibling (swapSyms t a c) d' := by
-          have := freq_swapLeaves t (freq t a) (freq t c) a c h_consistent
-          by_cases h_ac : a = c
-          · simp [ts, swapFourSyms, d', h]
-            aesop (add norm [swapLeaves, sibling,swapSyms])
-          · set t1 := swapLeaves t (freq t a) a (freq t c) c with ht1
-            have h_consistent1 : consistent t1 := by simp [t1, h_consistent]
-            by_cases hsib1b : sibling t1 a = b
-            · have h_freq1 : freq t1 b = freq t b := by grind[freq_swapLeaves]
-              grind[swapLeaves_id, sibling_sibling_id,swapSyms,swapFourSyms]
-            · have htemp : sibling (swapSyms t1 b (sibling t1 a)) (sibling t1 (sibling t1 a)) = b :=
-                sibling_swapSyms_other_sibling t1 b (sibling t1 a)
-                  h_consistent1 ?_ ?_ (Ne.symm hsib1b)
-              <;> aesop (add norm [sibling, swapSyms,swapLeaves,swapFourSyms])
+          simp [ts, swapFourSyms, d', h]
+          by_cases h_ac : a = c <;>
+          aesop (add norm[swapSyms, freq, sibling, consistent, swapLeaves])
         _ = a := by aesop
     aesop (add norm [swapLeaves, swapSyms, sibling])
   · simp [swapFourSyms]

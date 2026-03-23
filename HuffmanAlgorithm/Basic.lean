@@ -74,7 +74,7 @@ lemma alphabet_cases {α} [DecidableEq α]
   (a ∈ alphabet t1 ∧ a ∉ alphabet t2) ∨
   (a ∉ alphabet t1 ∧ a ∈ alphabet t2) ∨
   (a ∉ alphabet t1 ∧ a ∉ alphabet t2) := by
-  by_cases h1 : a ∈ alphabet t1 <;> grind[not_mem_inter_empty]
+  by_cases h1 : a ∈ alphabet t1 <;> grind[mem_inter_empty]
 
 /--
 A Huffman tree is consistent if each symbol only appears in one leaf in a tree and
@@ -120,7 +120,7 @@ theorem huffmanTree_induct_consistent {α} [DecidableEq α]
       P t1 a h_consistent_t1 → P t2 a h_consistent_t2 →
       P (HuffmanTree.node w t1 t2) a h_consistent)
   : P t a h_consistent := by
-    induction t <;> grind[not_mem_inter_empty, consistent, alphabet_cases]
+    induction t <;> grind[mem_inter_empty, consistent, alphabet_cases]
 
 /--
 Depth is the length of the path from root of tree to a leaf.
@@ -155,26 +155,14 @@ lemma depth_le_height {α} [DecidableEq α] (t : HuffmanTree α) (a : α) :
 In a consistent Huffman tree, exists a symbol whose depth is equal to the height of the tree.
 -/
 @[simp]
-lemma exists_at_height {α} [DecidableEq α] (t : HuffmanTree α) :
-  consistent t → ∃a ∈ alphabet t, depth t a = height t := by
-  intro h_consistent
+lemma exists_at_height {α} [DecidableEq α]
+  (t : HuffmanTree α) (h_consistent : consistent t) :
+  ∃a ∈ alphabet t, depth t a = height t := by
   induction t with
   | leaf w x => aesop (add norm[depth,height, alphabet])
   | node w t1 t2 h1 h2 =>
       simp[alphabet,height,depth]
       grind[mem_inter_empty,consistent]
-
-lemma depth_max_height_left {α} [DecidableEq α]
-  (t1 t2 : HuffmanTree α) (a : α)
-  (h1 : depth t1 a = max (height t1) (height t2))
-  (hh : height t1 ≥ height t2) :
-  depth t1 a = height t1 := by aesop
-
-lemma depth_max_height_right {α} [DecidableEq α]
-  {t1 t2 : HuffmanTree α} {a : α}
-  (h1 : depth t2 a = max (height t1) (height t2))
-  (hh : height t2 ≥ height t1) :
-  depth t2 a = height t2 := by aesop
 
 /--
 If a Huffman tree `t` has positive height and is consistent, then any Huffman tree `u`
@@ -194,7 +182,7 @@ lemma height_gt_0_alphabet_eq_imp_height_gt_0 {α} [DecidableEq α] (t u : Huffm
           simp [alphabet] at h_alphabet_t_u
           have hba : b ∈ ({a} : Finset α) := by grind
           have hca : c ∈ ({a} : Finset α) := by grind
-          grind[not_mem_inter_empty, consistent]
+          grind[mem_inter_empty, consistent]
       | node w t3 t4 => simp [height]
 
 /--
@@ -215,24 +203,24 @@ def freqF {α} [DecidableEq α] : Forest α → α → Nat
 @[simp]
 lemma notin_alphabet_imp_freq_0 {α} [DecidableEq α] (a : α) (t : HuffmanTree α) :
   a ∉ alphabet t → freq t a = 0 := by
-  induction t <;> aesop (add norm [alphabet, freq])
+  induction t <;> simp_all[alphabet,freq]
 
 @[simp]
 lemma notin_alphabetF_imp_freqF_0 {α} [DecidableEq α] (a : α) (ts : Forest α) :
   a ∉ alphabetF ts → freqF ts a = 0 := by
-  induction ts <;> aesop (add norm [alphabet, alphabetF, freq, freqF])
+  induction ts <;> simp_all[alphabetF, freqF]
 
 @[simp]
 lemma freq_0_right {α} [DecidableEq α] (a : α) (t1 t2 : HuffmanTree α)
   (h_disj : alphabet t1 ∩ alphabet t2 = ∅) (h_a_t1 : a ∈ alphabet t1) :
   freq t2 a = 0 := by
-  grind[notin_alphabet_imp_freq_0,not_mem_inter_empty]
+  grind[notin_alphabet_imp_freq_0,mem_inter_empty]
 
 @[simp]
 lemma freq_0_left {α} [DecidableEq α] (a : α) (t1 t2 : HuffmanTree α)
   (h_disj : alphabet t1 ∩ alphabet t2 = ∅) (h_a_t2 : a ∈ alphabet t2) :
   freq t1 a = 0 := by
-  grind[notin_alphabet_imp_freq_0, not_mem_inter_empty]
+  grind[notin_alphabet_imp_freq_0, mem_inter_empty]
 
 /--
 If a forest is consistent and has height zero,
@@ -265,9 +253,9 @@ For a consistent Huffman tree, the weight is the sum of the
 frequencies of all symbols in its alphabet.
 -/
 @[simp]
-lemma weight_eq_Sum_freq {α} [DecidableEq α] (t : HuffmanTree α) :
-  consistent t → weight t = (∑a ∈ alphabet t, freq t a) := by
-  intro h_consistent
+lemma weight_eq_Sum_freq {α} [DecidableEq α]
+  (t : HuffmanTree α) (h_consistent : consistent t) :
+   weight t = (∑a ∈ alphabet t, freq t a) := by
   induction t with
   | leaf w x => simp [weight, alphabet, freq]
   | node w t1 t2 ih1 ih2 =>
@@ -303,48 +291,27 @@ theorem cost_eq_Sum_freq_mult_depth
   | node w t1 t2 ih1 ih2 =>
       rintro ⟨h_disj, h_consistent_t1, h_consistent_t2⟩
       let t := HuffmanTree.node w t1 t2
-      have w1 := weight_eq_Sum_freq t1 h_consistent_t1
-      have w2 := weight_eq_Sum_freq t2 h_consistent_t2
-      have h_weight : ∀ (u : HuffmanTree α), consistent u →
-          weight u + ∑ a ∈ alphabet u, freq u a * depth u a =
-          ∑ a ∈ alphabet u, freq u a * (depth u a + 1) := by
-        intro u hu
-        simp [weight_eq_Sum_freq, hu, Nat.mul_add, Finset.sum_add_distrib, Nat.add_comm]
       have d1 : ∀ a, a ∈ alphabet t1 → depth t a = depth t1 a + 1 := by
         grind[depth]
       have d2 : ∀ a, a ∈ alphabet t2 → depth t a = depth t2 a + 1 := by
-        grind[not_mem_inter_empty,depth]
+        grind[mem_inter_empty,depth]
       calc
-        cost (HuffmanTree.node w t1 t2)
-            = weight t1 + cost t1 + weight t2 + cost t2 := by simp [cost]
+        cost t
+            = weight t1 + cost t1 + weight t2 + cost t2 := by simp[t, cost]
         _ = weight t1 + (∑ a ∈ alphabet t1, freq t1 a * depth t1 a)
-                + weight t2 + (∑ a ∈ alphabet t2, freq t2 a * depth t2 a) := by
-              rw [ih1 h_consistent_t1, ih2 h_consistent_t2]
+            + weight t2 + (∑ a ∈ alphabet t2, freq t2 a * depth t2 a) := by
+              rw[ih1 h_consistent_t1, ih2 h_consistent_t2]
         _ = ∑ a ∈ alphabet t1, freq t1 a * (depth t1 a + 1)
             + ∑ a ∈ alphabet t2, freq t2 a * (depth t2 a + 1) := by
-              grind
-        _ = ∑ a ∈ alphabet t1, freq (HuffmanTree.node w t1 t2) a *
-          depth (HuffmanTree.node w t1 t2) a
-            + ∑ a ∈ alphabet t2, freq (HuffmanTree.node w t1 t2) a *
-              depth (HuffmanTree.node w t1 t2) a := by
-              have sum1 :
-                ∑ a ∈ alphabet t1, freq t1 a * (depth t1 a + 1)
-                  = ∑ a ∈ alphabet t1, freq t a * depth t a := by
-                apply Finset.sum_congr rfl
-                grind[freq_0_right,freq]
-              have sum2 :
-                ∑ a ∈ alphabet t2, freq t2 a * (depth t2 a + 1)
-                  = ∑ a ∈ alphabet t2, freq (HuffmanTree.node w t1 t2) a *
-                    depth (HuffmanTree.node w t1 t2) a := by
-                apply Finset.sum_congr rfl
-                grind[freq_0_left,freq]
-              rw [sum1, sum2]
-        _ = ∑ a ∈ alphabet t1 ∪ alphabet t2, freq (HuffmanTree.node w t1 t2) a *
-              depth (HuffmanTree.node w t1 t2) a := by
-              aesop (add norm[Finset.sum_union,Finset.disjoint_iff_inter_eq_empty])
-        _ = ∑ a ∈ alphabet (HuffmanTree.node w t1 t2),
-            freq (HuffmanTree.node w t1 t2) a *
-            depth (HuffmanTree.node w t1 t2) a := by simp [alphabet]
+              simp[weight_eq_Sum_freq, h_consistent_t1, h_consistent_t2,
+                Nat.mul_add, Nat.add_comm, Finset.sum_add_distrib]
+              linarith
+        _ = ∑ a ∈ alphabet t1, freq t a * depth t a
+            + ∑ a ∈ alphabet t2, freq t a * depth t a := by
+              grind[Finset.sum_congr,freq_0_right,freq_0_left,freq]
+        _ = ∑ a ∈ alphabet t1 ∪ alphabet t2, freq t a * depth t a := by
+              aesop(add norm[Finset.sum_union,Finset.disjoint_iff_inter_eq_empty])
+        _ = ∑ a ∈ alphabet t, freq t a * depth t a := by simp[t, alphabet]
 
 @[simp]
 lemma height_0_imp_cost_0 {α} (t : HuffmanTree α) :
@@ -373,8 +340,8 @@ def minima {α} [DecidableEq α]
     ∀ c ∈ alphabet t,
       c ≠ a →
       c ≠ b →
-      freq t a ≤ freq t c ∧
-      freq t b ≤ freq t c
+      freq t c ≥ freq t a ∧
+      freq t c ≥ freq t b
 
 /--
 If two symbols `a` and `b` have frequencies less than or equal to all other

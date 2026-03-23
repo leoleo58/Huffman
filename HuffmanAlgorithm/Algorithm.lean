@@ -110,10 +110,7 @@ increases the length of the list by one.
 @[simp]
 lemma insortTree_length {α} (u : HuffmanTree α) (ts : List (HuffmanTree α)) :
     (insortTree u ts).length = ts.length + 1 := by
-  induction ts with
-  | nil => rfl
-  | cons t' ts' ih =>
-      aesop (add norm[insortTree])
+  induction ts <;> aesop (add norm[insortTree])
 
 /--
 Inserting a tree into any list `ts` using `insortTree`
@@ -121,10 +118,7 @@ produces a non-empty list.
 -/
 @[simp]
 lemma insortTree_ne_nil {α} (u : HuffmanTree α) (ts : List (HuffmanTree α)) :
-    insortTree u ts ≠ [] := by
-  intro H
-  have h := insortTree_length u ts
-  simp [H] at h
+    insortTree u ts ≠ [] := by grind[insortTree,insortTree_length]
 
 /--
 Inserting a tree into a forest joins its alphabet to the forest alphabet.
@@ -137,8 +131,7 @@ lemma alphabetF_insortTree {α : Type} [DecidableEq α] (u : HuffmanTree α) (ts
 @[simp]
 lemma consistentF_insortTree {α : Type} [DecidableEq α] (u : HuffmanTree α) (ts : Forest α) :
   consistentF (insortTree u ts) = consistentF ( u :: ts ):= by
-  induction ts <;>
-  grind[consistentF, alphabetF_insortTree, alphabetF, insortTree]
+  induction ts <;> grind[consistentF, alphabetF_insortTree, alphabetF, insortTree]
 
 @[simp]
 lemma freqF_insortTree {α : Type} [DecidableEq α] (u : HuffmanTree α) (ts : Forest α) :
@@ -182,7 +175,7 @@ lemma alphabet_huffman {α} [DecidableEq α] (ts : Forest α) (h : ts ≠ []) :
   alphabet (huffman ts h) = alphabetF ts := by
   induction ts, h using huffman.induct with
   | case1 t h1 h2 =>
-      simp [alphabetF, huffman]
+      simp[alphabetF, huffman, Finset.inter_eq_left]
       exact Finset.inter_eq_left.mp rfl
   | case2 t1 t2 ts h1 h2 ih =>
       simp [huffman, alphabetF, ih, Finset.union_left_comm, Finset.union_comm]
@@ -193,11 +186,9 @@ If the input forest is consistent, then the Huffman tree constructed is also con
 @[simp]
 lemma consistent_huffman {α} [DecidableEq α] (ts : Forest α) (h : ts ≠ []) :
   consistentF ts → consistent (huffman ts h) := by
-  induction ts, h using huffman.induct with
-  | case1 t h1 h2 => simp [consistentF, huffman]
-  | case2 t1 t2 ts h1 h2 ih =>
-      simp [consistentF, alphabetF, Finset.inter_union_distrib_left] at ih ⊢
-      grind[consistent_uniteTrees, consistent,huffman,consistentF]
+  induction ts, h using huffman.induct <;>
+  simp [consistentF, huffman, alphabetF, Finset.inter_union_distrib_left] at *
+  grind[consistent_uniteTrees, consistent,huffman,consistentF]
 
 /--
 The frequency of a symbol in the Huffman tree constructed is its total frequency in the forest.
@@ -205,7 +196,5 @@ The frequency of a symbol in the Huffman tree constructed is its total frequency
 @[simp]
 lemma freq_huffman {α} [DecidableEq α] (ts : Forest α) (a : α) (h : ts ≠ []) :
   freq (huffman ts h) a = freqF ts a := by
-  induction ts, h using huffman.induct <;> simp [freqF, huffman]
-  rename_i ih
-  simp [ih]
-  linarith
+  induction ts, h using huffman.induct <;>
+  grind[freqF, huffman, uniteTrees, freq, freqF_insortTree]

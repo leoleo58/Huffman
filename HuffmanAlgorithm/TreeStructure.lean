@@ -340,44 +340,13 @@ lemma weight_splitLeaf {α} [DecidableEq α] (t : HuffmanTree α) (wa wb : Nat) 
 The cost of the tree after splitting a leaf into `a` and `b`
 increases the cost of the tree by `wa + wb`.
 -/
-lemma cost_splitLeaf {α} [DecidableEq α] (t : HuffmanTree α) (wa wb : Nat) (a b : α) :
-  consistent t → a ∈ alphabet t → freq t a = wa + wb →
+lemma cost_splitLeaf {α} [DecidableEq α] (t : HuffmanTree α) (wa wb : Nat) (a b : α)
+  (h_consistent : consistent t)  (h_alphabet : a ∈ alphabet t) (h_freq : freq t a = wa + wb) :
   cost (splitLeaf t wa a wb b) = cost t + wa + wb := by
-  intro h_consistent h_alphabet h_freq
-  induction a, h_consistent using huffmanTree_induct_consistent with
-  | leaf wb b h_consistent => grind [splitLeaf, cost, alphabet, freq,weight]
-  | left w t1 t2 h_consistent h_consistent1 h_consistent2 hd h_alphabet1 h_alphabet2 h1 h2 =>
-      have h3 := notin_alphabet_imp_freq_0 a t2 h_alphabet2
-      simp [freq, h3] at h_freq
-      simp [h_alphabet1, h_freq] at h1
-      have h4 := weight_splitLeaf (HuffmanTree.node w t1 t2) wa wb a b h_consistent h_alphabet
-      simp [freq, h3, h_freq, weight,splitLeaf] at h4
-      simp [cost, splitLeaf, h1]
-      calc
-        weight (splitLeaf t1 wa a wb b) + (cost t1 + wa + wb) +
-        weight (splitLeaf t2 wa a wb b) + cost (splitLeaf t2 wa a wb b) =
-        weight (splitLeaf t1 wa a wb b) + weight (splitLeaf t2 wa a wb b) +
-        cost t1 + wa + wb + cost (splitLeaf t2 wa a wb b) := by ring
-        _ = weight t1 + weight t2 + cost t1 + wa + wb + cost t2 := by
-            aesop (add norm [h4, cost, weight, splitLeaf])
-        _ = weight t1 + cost t1 + weight t2 + cost t2 + wa + wb := by ring
-  | right w t1 t2 h_consistent h_consistent1 h_consistent2 hd h_alphabet1 h_alphabet2 h1 h2 =>
-      have h3 := notin_alphabet_imp_freq_0 a t1 h_alphabet1
-      simp [freq, h3] at h_freq
-      simp [h_alphabet2, h_freq] at h2
-      have h4 := weight_splitLeaf (HuffmanTree.node w t1 t2) wa wb a b h_consistent h_alphabet
-      simp [freq, h3, h_freq, weight,splitLeaf] at h4
-      simp [cost, splitLeaf, h2]
-      calc
-        weight (splitLeaf t1 wa a wb b) + cost (splitLeaf t1 wa a wb b) +
-        weight (splitLeaf t2 wa a wb b) + (cost t2 + wa + wb) =
-        weight (splitLeaf t1 wa a wb b) + weight (splitLeaf t2 wa a wb b) +
-        cost (splitLeaf t1 wa a wb b) + cost t2 + wa + wb := by ring
-        _ = weight t1 + weight t2 + cost t1 + cost t2 + wa + wb := by
-            aesop (add norm [h4, cost, weight, splitLeaf])
-        _ = weight t1 + cost t1 + weight t2 + cost t2 + wa + wb := by ring
-  | none w t1 t2 h_consistent h_consistent1 h_consistent2 hd h_alphabet1 h_alphabet2 h1 h2 =>
-      aesop(add norm [alphabet])
+  induction a, h_consistent using huffmanTree_induct_consistent <;>
+  grind[cost, weight, splitLeaf, freq, alphabet,
+          weight_splitLeaf, notin_alphabet_imp_freq_0,
+          weight_eq_Sum_freq, notin_alphabet_imp_splitLeaf_id]
 
 @[simp]
 lemma cachedWeight_splitLeaf {α : Type} [DecidableEq α]
@@ -406,7 +375,7 @@ lemma splitLeafF_insortTree_when_in_alphabetF_tail {α : Type} [DecidableEq α]
   | cons u us ih =>
       simp [consistentF] at h_consistent
       by_cases hau : a ∈ alphabet u
-      · have haus : a ∉ alphabetF us := by grind[not_mem_inter_empty]
+      · have haus : a ∉ alphabetF us := by grind[mem_inter_empty]
         aesop (add norm [splitLeaf, splitLeafF, insortTree])
       · simp [alphabetF, hau] at h_a_ts
         simp [freqF, notin_alphabet_imp_freq_0 a u hau] at h_freq

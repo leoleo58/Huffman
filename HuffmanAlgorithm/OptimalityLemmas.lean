@@ -132,20 +132,18 @@ lemma optimum_splitLeaf {α : Type} [DecidableEq α]
         grind [cost_mergeSibling]
       _ ≤ cost u := by
         have h_minima : minima u a b := by
-          refine ⟨ha_u, hb_u, h_ab, ?_⟩
-          intro c hc hca hcb'
-          have hc_t' : c ∈ alphabet t' := by
-            rw [h_alp_t_u]
-            exact hc
-          simp [t', alphabet_splitLeaf, ha_t] at hc_t'
-          rcases hc_t' with (h_cb | hc_t)
-          · exfalso
-            exact hcb' h_cb
-          · have h_freq_uc: freq u c = freq t c := by
-              simp [h_freq_u.symm,freq_splitLeaf t wa wb a b c h_consistent hb_t, hca, hcb']
-            grind[freq_splitLeaf]
+          apply twice_freq_le_imp_minima t u a b wa wb
+          · aesop
+          · aesop
+          · exact ha_u
+          · exact h_ab
+          · ext x
+            split_ifs with hxa hxb
+            · aesop(add norm[freq])
+            · aesop(add norm[freq])
+            · simp [h_freq_u.symm, freq_splitLeaf t wa wb a b x h_consistent hb_t, hxa, hxb]
         exact cost_swapFourSyms_le u a b c d h_consistent_u h_minima hc_u
-          hd_u hc_depth hd_depth h_dc.symm
+            hd_u hc_depth hd_depth h_dc.symm
 
 /--
 Splitting a leaf commutes with Huffman tree construction.
@@ -170,7 +168,7 @@ lemma splitLeaf_huffman_commute {α : Type} [DecidableEq α]
         (a ∈ alphabet t1 ∧ a ∉ alphabet t2 ∧ a ∉ alphabetF ts) ∨
         (a ∉ alphabet t1 ∧ a ∈ alphabet t2 ∧ a ∉ alphabetF ts) ∨
         (a ∉ alphabet t1 ∧ a ∉ alphabet t2 ∧ a ∈ alphabetF ts):= by
-        grind [alphabetF,not_mem_inter_empty, consistentF]
+        grind [alphabetF, mem_inter_empty, consistentF]
       rcases h_cases with h1 | h2 | h3 <;>
       aesop (add norm
           [splitLeafF, insortTree, huffman, splitLeaf,
