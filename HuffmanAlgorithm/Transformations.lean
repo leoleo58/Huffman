@@ -3,8 +3,8 @@ import HuffmanAlgorithm.TreeStructure
 /-!
 # Structural Tree Transformations
 
-This file defines tree transformations with swapping symbols, 4 symbols, or
-leaves within a Huffman tree together with lemmas showing their effect on the tree structure.
+This file defines tree transformations with swapping leaves, symbols, or 4 symbols
+within a Huffman tree together with lemmas showing their effect on the tree structure.
 These transformations are used for tree optimality proof
 
 ## Definitions
@@ -55,8 +55,8 @@ lemma consistent_swapLeaves {α} [DecidableEq α]
   | leaf wc c =>
       aesop (add norm [swapLeaves])
   | node w t1 t2 ih1 ih2 =>
-      simp [consistent,swapLeaves]
-      grind [mem_inter_empty]
+      simp[consistent, swapLeaves]
+      grind[mem_inter_empty]
 
 @[simp]
 lemma depth_swapLeaves_neither {α} [DecidableEq α]
@@ -130,7 +130,7 @@ lemma cost_swapLeaves {α} [DecidableEq α]
     else
       cost (swapLeaves t wa a wb b) = cost t := by
   induction t with
-  | leaf w c => aesop (add norm [cost,alphabet,freq,depth, swapLeaves])
+  | leaf w c => aesop (add norm [cost, alphabet, freq, depth, swapLeaves])
   | node w t1 t2 ih1 ih2 =>
       obtain ⟨h_disj, h_consistent_t1, h_consistent_t2⟩ := h_consistent
       simp [alphabet, cost, freq, depth, swapLeaves]
@@ -192,10 +192,10 @@ lemma sibling_swapLeaves_sibling {α} [DecidableEq α]
       · have h_height_t1_le : height t1 > 0 := Nat.pos_of_ne_zero h_height_t1
         by_cases h_b_t1 : b ∈ alphabet t1
         · simp [h_b_t1, h_height_t1_le, swapLeaves]
-          grind[height_gt_0_in_alphabet_imp_sibling_left,sibling_ne_imp_sibling_in_alphabet]
+          grind[height_gt_0_in_alphabet_imp_sibling_left, sibling_ne_imp_sibling_in_alphabet]
         · by_cases h_b_t2 : b ∈ alphabet t2
           · have h_s_alphabet_1 : sibling t2 b ∉ alphabet t1 := by
-              grind[in_alphabet_imp_sibling_in_alphabet,mem_inter_empty]
+              grind[in_alphabet_imp_sibling_in_alphabet, mem_inter_empty]
             simp [h_height_t1_le, swapLeaves]
             grind[height_gt_0_notin_alphabet_imp_sibling_left]
           · aesop (add norm [sibling, alphabet])
@@ -247,7 +247,7 @@ lemma cost_swapSyms {α} [DecidableEq α]
   cost t + freq t a * depth t b + freq t b * depth t a := by
     by_cases h_a_b : a = b
     · simp_all
-    · grind[swapSyms,cost_swapLeaves]
+    · grind[swapSyms, cost_swapLeaves]
 
 /--
 Cost after swapping symbols `a` and `b` is lower or equals to original cost
@@ -280,7 +280,7 @@ lemma sibling_swapSyms_other_sibling {α} [DecidableEq α]
   sibling (swapSyms t a b) (sibling t b) = a := by
     set c := sibling t b with hc
     have hsbc := sibling_reciprocal t b c h_consistent (by rw [hc])
-    grind[sibling_reciprocal,sibling_swapSyms_sibling,consistent_swapSyms, sibling]
+    grind[sibling_reciprocal, sibling_swapSyms_sibling, consistent_swapSyms, sibling]
 
 /--
 Exchange 2 symbol with other 2 symbol
@@ -323,7 +323,7 @@ lemma sibling_swapFourSyms_when_4th_is_sibling {α} [DecidableEq α]
   · let d' := sibling t c
     let ts := swapFourSyms t a b c d'
     have abba : (sibling ts a = b) = (sibling ts b = a) := by
-      grind[sibling_reciprocal,consistent_swapFourSyms]
+      grind[sibling_reciprocal, consistent_swapFourSyms]
     have s : sibling t c = sibling (swapSyms t a c) a := by
       grind[sibling_swapSyms_other_sibling, sibling_reciprocal,
             swapSyms, swapLeaves_id,consistent_swapFourSyms, consistent, consistent_swapSyms]

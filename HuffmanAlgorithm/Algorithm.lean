@@ -62,7 +62,7 @@ For trees of height zero, the cached weight is the actual weight.
 @[simp]
 lemma height_0_imp_cachedWeight_eq_weight {α} (t : HuffmanTree α) :
   height t = 0 → cachedWeight t = weight t := by
-  aesop (add norm[weight, cachedWeight,height])
+  aesop (add norm[weight, cachedWeight, height])
 
 /--
 Combine two Huffman trees into a single tree.
@@ -118,7 +118,7 @@ produces a non-empty list.
 -/
 @[simp]
 lemma insortTree_ne_nil {α} (u : HuffmanTree α) (ts : List (HuffmanTree α)) :
-    insortTree u ts ≠ [] := by grind[insortTree,insortTree_length]
+    insortTree u ts ≠ [] := by grind[insortTree, insortTree_length]
 
 /--
 Inserting a tree into a forest joins its alphabet to the forest alphabet.
@@ -137,7 +137,7 @@ lemma consistentF_insortTree {α : Type} [DecidableEq α] (u : HuffmanTree α) (
 lemma freqF_insortTree {α : Type} [DecidableEq α] (u : HuffmanTree α) (ts : Forest α) :
   freqF (insortTree u ts) = fun a => freq u a + freqF ts a := by
   ext a
-  induction ts <;> aesop (add norm[insortTree, freqF,freq, add_left_comm])
+  induction ts <;> aesop (add norm[insortTree, freq, freqF, add_left_comm])
 
 @[simp]
 lemma heightF_insortTree {α : Type} (u : HuffmanTree α) (ts : Forest α) :
@@ -153,7 +153,7 @@ lemma sortedByWeight_insortTree {α}
   (h_sbw : sortedByWeight ts) (h_height_t : height t = 0) (h_height_ts : heightF ts = 0) :
   sortedByWeight (insortTree t ts) := by
   induction ts using sortedByWeight.induct <;>
-    grind[heightF, insortTree,height_0_imp_cachedWeight_eq_weight,sortedByWeight]
+    grind[heightF, insortTree, height_0_imp_cachedWeight_eq_weight, sortedByWeight]
 
 /--
 Construct a Huffman tree from a non-empty forest.
@@ -188,7 +188,7 @@ lemma consistent_huffman {α} [DecidableEq α] (ts : Forest α) (h : ts ≠ []) 
   consistentF ts → consistent (huffman ts h) := by
   induction ts, h using huffman.induct <;>
   simp [consistentF, huffman, alphabetF, Finset.inter_union_distrib_left] at *
-  grind[consistent_uniteTrees, consistent,huffman,consistentF]
+  grind[consistent_uniteTrees, consistent, huffman, consistentF]
 
 /--
 The frequency of a symbol in the Huffman tree constructed is its total frequency in the forest.
@@ -197,4 +197,4 @@ The frequency of a symbol in the Huffman tree constructed is its total frequency
 lemma freq_huffman {α} [DecidableEq α] (ts : Forest α) (a : α) (h : ts ≠ []) :
   freq (huffman ts h) a = freqF ts a := by
   induction ts, h using huffman.induct <;>
-  grind[freqF, huffman, uniteTrees, freq, freqF_insortTree]
+  grind[freq, freqF, huffman, uniteTrees, freqF_insortTree]

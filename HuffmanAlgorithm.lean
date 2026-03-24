@@ -3,16 +3,16 @@ import HuffmanAlgorithm.Optimum
 /-!
 # Huffman Coding
 
-This file provides function for applying the formalized Huffman's algorithm to sample inputs,
+This file provides function for applying the formalised Huffman's algorithm to sample inputs,
 such as lists of symbols with their frequencies or strings to be encoded.
 The main focus is to compute Huffman codes for symbols and encode strings
 according to those codes.
 
 ## Main Function
-- `freqToCode` : Turns a list of symbols and their frequencies
+- `codeList` : Turns a list of symbols and their frequencies
   into a list of symbols with their Huffman codes.
   Example:
-  #eval freqToCode [('t', 4), ('e', 2), ('s', 3)]
+  #eval codeList [('t', 4), ('e', 2), ('s', 3)]
   result: [('t', "0"), ('e', "10"), ('s', "11")]
 - `encodeString` : Encodes a string into its Huffman-coded string,
   returning the encoded string and the Huffman code used.
@@ -61,10 +61,10 @@ def huffmanCode {α} (t : HuffmanTree α) : List (α × String) :=
   | _ => encode t ""
 
 /--
-`freqToCode` creates a Huffman tree from the list and returns a list of each symbol
+`codeList` creates a Huffman tree from the list and returns a list of each symbol
 and its Huffman code.
 -/
-def freqToCode {α} [DecidableEq α]
+def codeList {α} [DecidableEq α]
 (fs : freqList α) : List (α × String) :=
   let fs' := fs.mergeSort (fun x y => x.2 ≤ y.2)
   if h : fs' ≠ [] then
@@ -83,7 +83,7 @@ def encodeString (s : String) : String × List (Char × String) :=
       | some (_, n) => (x, n + 1) :: fs.erase (x, n)
       | none => (x, 1) :: fs
     ) []
-  let code_list := freqToCode (freq)
+  let code_list := codeList (freq)
   let encoded := s.toList.foldl
     (fun s' x =>
       match code_list.find? (fun (y, _) => y = x) with
@@ -92,5 +92,5 @@ def encodeString (s : String) : String × List (Char × String) :=
     ) ""
   (encoded, code_list)
 
-#eval freqToCode [('t', 4), ('e', 2), ('s', 3)]
+#eval codeList [('t', 4), ('e', 2), ('s', 3)]
 #eval encodeString "test"

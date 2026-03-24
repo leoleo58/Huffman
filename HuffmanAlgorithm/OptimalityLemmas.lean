@@ -3,7 +3,7 @@ import HuffmanAlgorithm.Transformations
 /-!
 # Lemmas for Huffman Tree Optimality
 
-This file contains key lemmas used to proving the optimality of Huffman trees
+This file contains key lemmas used to prove the optimality of Huffman trees
 
 ## Lemmas
 - Lemma `cost_swapFourSyms_le`
@@ -38,7 +38,7 @@ lemma cost_swapFourSyms_le {α} [DecidableEq α]
   by_cases h : a ≠ d ∧ b ≠ c
   · rcases h with ⟨h_ad, h_bc⟩
     by_cases h_ac : a = c
-    · simp [swapFourSyms, h_bc, h_ac, h_cd, swapLeaves_id t c h_consistent,swapSyms]
+    · simp [swapFourSyms, h_bc, h_ac, h_cd, swapLeaves_id t c h_consistent, swapSyms]
       by_cases h_bd : b = d
       · simp [h_bd, swapLeaves_id t d h_consistent]
       · have hcost := cost_swapLeaves t (freq t b) (freq t d) b d h_consistent h_bd
@@ -48,7 +48,7 @@ lemma cost_swapFourSyms_le {α} [DecidableEq α]
         nlinarith
     · by_cases h_bd : b = d
       · have : swapFourSyms t a b c d = swapLeaves t (freq t a) a (freq t c) c := by
-          grind[swapFourSyms,swapLeaves_id,swapSyms, consistent_swapLeaves]
+          grind[swapFourSyms, swapLeaves_id, swapSyms, consistent_swapLeaves]
         rw [this]
         have hcost := cost_swapLeaves t (freq t a) (freq t c) a c h_consistent h_ac
         simp [ha, hc] at hcost
@@ -59,10 +59,10 @@ lemma cost_swapFourSyms_le {α} [DecidableEq α]
         calc
           cost (swapFourSyms t a b c d) ≤ cost (swapSyms t a c) := by
             let t' := swapLeaves t (freq t a) a (freq t c) c
-            have h_freq' : freq t' b ≤ freq t' d := by grind[freq_swapLeaves,freq,alphabet]
+            have h_freq' : freq t' b ≤ freq t' d := by grind[freq_swapLeaves, freq, alphabet]
             aesop(add norm[swapFourSyms])
           _ ≤ cost t := by aesop
-  · grind[swapSyms, cost_swapSyms_le,depth_le_height,swapFourSyms,cost_swapLeaves]
+  · grind[swapSyms, cost_swapSyms_le, depth_le_height, swapFourSyms, cost_swapLeaves]
 
 /--
 Splitting a leaf node `a` into two leaves `a` and `b` preserves optimality, if:
@@ -93,7 +93,7 @@ lemma optimum_splitLeaf {α : Type} [DecidableEq α]
       have hb_t' : b ∈ alphabet t' := by simp [t', ha_t]
       grind
     have h_ab : a ≠ b := by grind
-    have h_height_u : height u > 0 := by cases u <;> grind[height,alphabet]
+    have h_height_u : height u > 0 := by cases u <;> grind[height, alphabet]
     obtain ⟨c, hc_u, hc_depth⟩ := exists_at_height u h_consistent_u
     let d := sibling u c
     have h_dc : d ≠ c := by grind[depth_height_imp_sibling_ne]
@@ -116,12 +116,12 @@ lemma optimum_splitLeaf {α : Type} [DecidableEq α]
       ext x
       have ha_u': a ∈ alphabet u' := by simp [h_alp_u'_u, ha_u]
       rw [freq_mergesibling u' a h_consistent_u' ha_u' ?_] <;>
-      aesop(add norm[h_freq_u',h_freq_u.symm])
+      aesop(add norm[h_freq_u', h_freq_u.symm])
     calc
       cost t' = cost t + wa + wb :=
         cost_splitLeaf t wa wb a b h_consistent ha_t h_freq
       _ ≤ cost v + wa + wb := by
-        grind[optimum,consistent_mergeSibling,alphabet_splitLeaf,alphabet_mergeSibling]
+        grind[optimum, consistent_mergeSibling, alphabet_splitLeaf, alphabet_mergeSibling]
       _ = cost u' := by
         have hwafreq : wa = freq u' a := by
           have : wa = freq t' a := by grind[freq_splitLeaf]
@@ -163,7 +163,7 @@ lemma splitLeaf_huffman_commute {α : Type} [DecidableEq α]
   | case2 t1 t2 ts h1 h2 ih =>
       have h_disj1 : (alphabet t1 ∪ alphabet t2) ∩ alphabetF ts = ∅ := by
         grind[consistentF,alphabetF]
-      have h_disj2 : alphabet t1 ∩ alphabet t2 = ∅ := by grind[consistentF,alphabetF]
+      have h_disj2 : alphabet t1 ∩ alphabet t2 = ∅ := by grind[consistentF, alphabetF]
       have h_cases :
         (a ∈ alphabet t1 ∧ a ∉ alphabet t2 ∧ a ∉ alphabetF ts) ∨
         (a ∉ alphabet t1 ∧ a ∈ alphabet t2 ∧ a ∉ alphabetF ts) ∨

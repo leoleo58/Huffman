@@ -3,9 +3,9 @@ import HuffmanAlgorithm.Algorithm
 /-!
 # Structural properties and operations of Huffman trees
 
-This file formalizes structural properties of Huffman trees.
+This file formalises structural properties of Huffman trees.
 It defines sibling relations, merging sibling nodes, and splitting leaf nodes.
-Lemmas accompanying each definition formalize their structural properties.
+Lemmas accompanying each definition formalise their structural properties.
 
 ## Main definitions
 
@@ -30,42 +30,41 @@ def sibling {α} [DecidableEq α] : HuffmanTree α → α → α
       else a
 
 @[simp]
-lemma notin_alphabet_imp_sibling_id {α} [DecidableEq α] (t : HuffmanTree α) (a : α) :
-  a ∉ alphabet t → sibling t a = a := by
-  intro h_a
+lemma notin_alphabet_imp_sibling_id {α} [DecidableEq α] (t : HuffmanTree α) (a : α)
+  (h_a : a ∉ alphabet t) : sibling t a = a := by
   cases t with
   | leaf w x => simp [sibling]
   | node w t1 t2 =>
-    cases t1 <;> cases t2 <;> aesop (add norm[sibling,alphabet])
+    cases t1 <;> cases t2 <;> aesop (add norm[sibling, alphabet])
 
 @[simp]
 lemma height_0_imp_sibling_id {α} [DecidableEq α] (t : HuffmanTree α) (a : α) :
   height t = 0 → sibling t a = a := by
-  cases t <;> simp[sibling,height]
+  cases t <;> simp[sibling, height]
 
 @[simp]
 lemma height_gt_0_in_alphabet_imp_sibling_left {α} [DecidableEq α]
   (t1 t2 : HuffmanTree α) (a : α) (w : ℕ) :
   height t1 > 0 → a ∈ alphabet t1 → sibling (HuffmanTree.node w t1 t2) a = sibling t1 a := by
-  cases t1 <;> aesop (add norm [height,sibling])
+  cases t1 <;> aesop (add norm [height, sibling])
 
 @[simp]
 lemma height_gt_0_in_alphabet_imp_sibling_right {α} [DecidableEq α]
   (t1 t2 : HuffmanTree α) (a : α) (w : ℕ) :
   height t2 > 0 → a ∈ alphabet t1 → sibling (HuffmanTree.node w t1 t2) a = sibling t1 a := by
-  cases t2 <;> aesop (add norm [height,sibling])
+  cases t2 <;> aesop (add norm [height, sibling])
 
 @[simp]
 lemma height_gt_0_notin_alphabet_imp_sibling_left {α} [DecidableEq α]
   (t1 t2 : HuffmanTree α) (a : α) (w : ℕ) :
   height t1 > 0 → a ∉ alphabet t1 → sibling (HuffmanTree.node w t1 t2) a = sibling t2 a := by
-  cases t1 <;> aesop (add norm [height,sibling])
+  cases t1 <;> aesop (add norm [height, sibling])
 
 @[simp]
 lemma height_gt_0_notin_alphabet_imp_sibling_right {α} [DecidableEq α]
   (t1 t2 : HuffmanTree α) (a : α) (w : ℕ) :
   height t2 > 0 → a ∉ alphabet t1 → sibling (HuffmanTree.node w t1 t2) a = sibling t2 a := by
-  cases t2 <;> aesop (add norm [height,sibling])
+  cases t2 <;> aesop (add norm [height, sibling])
 
 @[simp]
 lemma either_height_gt_0_imp_sibling {α} [DecidableEq α]
@@ -132,7 +131,7 @@ theorem sibling_induct_consistent {α} [DecidableEq α]
   | node w1 t1 t2 ih1 ih2 =>
       let ⟨h_disj, h_consistent_t1, h_consistent_t2⟩ := h_consistent
       cases t1 <;> cases t2 <;>
-      grind[mem_inter_empty, in_alphabet_imp_sibling_in_alphabet,
+      grind[in_alphabet_imp_sibling_in_alphabet,
             alphabet_cases, height, alphabet, consistent]
 
 /--
@@ -140,9 +139,8 @@ For a consistent tree, applying `sibling` twice returns the original symbol.
 -/
 @[simp]
 lemma sibling_sibling_id {α} [DecidableEq α]
-  (t : HuffmanTree α) (a : α) :
-  consistent t → sibling t (sibling t a) = a := by
-  intro h_consistent
+  (t : HuffmanTree α) (a : α) (h_consistent : consistent t) :
+  sibling t (sibling t a) = a := by
   induction a, h_consistent using sibling_induct_consistent <;> aesop (add norm [sibling])
 
 /--
@@ -167,9 +165,8 @@ Siblings have equal depth in a consistent tree.
 -/
 @[simp]
 lemma depth_sibling {α} [DecidableEq α]
-  (t : HuffmanTree α) (a : α) :
-  consistent t → depth t (sibling t a) = depth t a := by
-  intro h_consistent
+  (t : HuffmanTree α) (a : α) (h_consistent : consistent t) :
+  depth t (sibling t a) = depth t a := by
   induction a, h_consistent using sibling_induct_consistent <;>
   aesop (add norm [depth, alphabet, sibling])
 
@@ -190,7 +187,7 @@ def mergeSibling {α} [DecidableEq α] : HuffmanTree α → α → HuffmanTree �
 lemma notin_alphabet_imp_mergeSibling_id {α} [DecidableEq α]
   (t : HuffmanTree α) (a : α) :
   a ∉ alphabet t → mergeSibling t a = t := by
-  induction t,a using mergeSibling.induct <;> grind[alphabet,mergeSibling]
+  induction t,a using mergeSibling.induct <;> grind[alphabet, mergeSibling]
 
 @[simp]
 lemma height_gt_0_imp_mergeSibling_left {α} [DecidableEq α]
@@ -209,7 +206,8 @@ lemma height_gt_0_imp_mergeSibling_right {α} [DecidableEq α]
 @[simp]
 lemma either_height_gt_0_imp_mergeSibling {α} [DecidableEq α]
   (t1 t2 : HuffmanTree α) (a : α) (w : ℕ) :
-  height t1 > 0 ∨ height t2 > 0 → mergeSibling (HuffmanTree.node w t1 t2) a =
+  height t1 > 0 ∨ height t2 > 0 →
+  mergeSibling (HuffmanTree.node w t1 t2) a =
   HuffmanTree.node w (mergeSibling t1 a) (mergeSibling t2 a) := by aesop
 
 /--
@@ -225,12 +223,11 @@ lemma alphabet_mergeSibling {α} [DecidableEq α]
 
 @[simp]
 lemma consistent_mergeSibling {α} [DecidableEq α]
-  (t : HuffmanTree α) (a : α) :
-  consistent t → consistent (mergeSibling t a) := by
-  intro h_consistent
+  (t : HuffmanTree α) (a : α) (h_consistent : consistent t) :
+  consistent (mergeSibling t a) := by
   induction a, h_consistent using sibling_induct_consistent <;>
-  grind[either_height_gt_0_imp_mergeSibling, alphabet_mergeSibling,
-        notin_alphabet_imp_mergeSibling_id, consistent, mergeSibling, alphabet]
+  grind[consistent, mergeSibling, alphabet, alphabet_mergeSibling,
+        either_height_gt_0_imp_mergeSibling, notin_alphabet_imp_mergeSibling_id]
 
 @[simp]
 lemma freq_mergesibling {α} [DecidableEq α]
@@ -266,10 +263,10 @@ lemma cost_mergeSibling {α} [DecidableEq α]
   (h_consistent : consistent t) (h_sib : sibling t a ≠ a) :
   cost (mergeSibling t a) + freq t a + freq t (sibling t a) = cost t := by
   induction a, h_consistent using sibling_induct_consistent <;>
-  grind[mergeSibling, cost, freq,weight, sibling, consistent, alphabet,
-        weight_mergeSibling,notin_alphabet_imp_sibling_id,
-        notin_alphabet_imp_mergeSibling_id,either_height_gt_0_imp_sibling,
-        notin_alphabet_imp_freq_0,sibling,either_height_gt_0_imp_mergeSibling]
+  grind[mergeSibling, cost, freq, weight, sibling, consistent, alphabet,
+        weight_mergeSibling, notin_alphabet_imp_sibling_id,
+        notin_alphabet_imp_mergeSibling_id, either_height_gt_0_imp_sibling,
+        notin_alphabet_imp_freq_0, either_height_gt_0_imp_mergeSibling]
 
 /--
 Split a leaf node into two leaves `a` and `b` with
@@ -296,7 +293,7 @@ lemma notin_alphabet_imp_splitLeaf_id {α} [DecidableEq α]
 lemma notin_alphabetF_imp_splitLeafF_id {α} [DecidableEq α]
 (ts : Forest α) (wa wb : Nat) (a b : α) :
   a ∉ alphabetF ts → splitLeafF ts wa a wb b = ts := by
-  induction ts <;> aesop(add norm[alphabetF, splitLeafF,alphabet,splitLeaf])
+  induction ts <;> aesop(add norm[alphabetF, splitLeafF, alphabet, splitLeaf])
 
 /--
 The alphabet after splitting a leaf into `a` and `b`.
@@ -313,7 +310,7 @@ lemma consistent_splitLeaf {α} [DecidableEq α] (t : HuffmanTree α) (wa wb : N
   induction t with
   | leaf w x => grind [splitLeaf,consistent, alphabet]
   | node w t1 t2 ih1 ih2 =>
-      grind[mem_inter_empty,alphabet,consistent,splitLeaf,alphabet_splitLeaf]
+      grind[mem_inter_empty, alphabet, consistent, splitLeaf, alphabet_splitLeaf]
 
 @[simp]
 lemma freq_splitLeaf {α} [DecidableEq α] (t : HuffmanTree α)

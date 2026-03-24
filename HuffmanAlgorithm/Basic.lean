@@ -5,7 +5,7 @@ import aesop
 # Basic Definitions for Huffman Trees
 
 This file introduces the core definition used throughout the
-formalization of Huffman’s algorithm.
+formalisation of Huffman’s algorithm.
 It defines the Huffman tree and forest, along with their properties:
 which are alphabets, consistent, frequencies, depth, height.
 Additional tree properties weight and cost is also defined.
@@ -22,7 +22,7 @@ Lemmas about main definitions describing its properties and relationships is als
 - `consistent t`     : Condition stating that each symbol only appears in one leaf in tree `t`.
 - `depth t a`        : Depth of symbol `a` in tree `t`.
 - `height t`         : Height of the tree `t`.
-- `freq t a`         : Frequency of symbol `a` in `t`.
+- `freq t a`         : Frequency of symbol `a` in tree `t`.
 - `weight t`         : Weight of the tree `t`.
 - `cost t`           : Cost of tree `t`.
 - `optimum t`        : Condition stating that tree `t` is optimal.
@@ -214,7 +214,7 @@ lemma notin_alphabetF_imp_freqF_0 {α} [DecidableEq α] (a : α) (ts : Forest α
 lemma freq_0_right {α} [DecidableEq α] (a : α) (t1 t2 : HuffmanTree α)
   (h_disj : alphabet t1 ∩ alphabet t2 = ∅) (h_a_t1 : a ∈ alphabet t1) :
   freq t2 a = 0 := by
-  grind[notin_alphabet_imp_freq_0,mem_inter_empty]
+  grind[notin_alphabet_imp_freq_0, mem_inter_empty]
 
 @[simp]
 lemma freq_0_left {α} [DecidableEq α] (a : α) (t1 t2 : HuffmanTree α)
@@ -310,7 +310,7 @@ theorem cost_eq_Sum_freq_mult_depth
             + ∑ a ∈ alphabet t2, freq t a * depth t a := by
               grind[Finset.sum_congr,freq_0_right,freq_0_left,freq]
         _ = ∑ a ∈ alphabet t1 ∪ alphabet t2, freq t a * depth t a := by
-              aesop(add norm[Finset.sum_union,Finset.disjoint_iff_inter_eq_empty])
+              aesop(add norm[Finset.sum_union, Finset.disjoint_iff_inter_eq_empty])
         _ = ∑ a ∈ alphabet t, freq t a * depth t a := by simp[t, alphabet]
 
 @[simp]
@@ -355,4 +355,4 @@ lemma twice_freq_le_imp_minima {α} [DecidableEq α]
   (h4 : a ≠ b)
   (h5 : freq u =
     fun c => if c = a then wa else if c = b then wb else freq t c) :
-  minima u a b := by grind[minima,alphabet,freq]
+  minima u a b := by grind[minima, alphabet, freq]

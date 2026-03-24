@@ -6,16 +6,15 @@ import HuffmanAlgorithm.OptimalityLemmas
 This file contains the main theorem proving the optimality of Huffman trees.
 
 Huffman’s algorithm constructs a tree that minimizes the total cost
-for a given set of symbol frequencies.
+for a given set of symbol and its frequencies.
 
 ## Main Result
-
-Theorem `optimum_huffman` : Shows that the Huffman tree built from any non-empty forest is optimal,
-  no other tree with the same alphabet and frequencies has lower cost.
+Theorem `optimum_huffman` shows that the Huffman tree built from any non-empty forest is optimal,
+no other tree with the same alphabet and frequencies has lower cost.
 -/
 
 /--
-The Huffman tree constructed from a forest `ts` using the `huffman` function
+The Huffman tree constructed from a forest `ts` using the `huffman` algorithm
 is optimal.
 -/
 theorem optimum_huffman {α : Type} [d : DecidableEq α] (ts : Forest α)
@@ -70,7 +69,7 @@ theorem optimum_huffman {α : Type} [d : DecidableEq α] (ts : Forest α)
                   by_cases h_ca : c = a
                   · aesop(add norm[freq, freqF,alphabet, alphabetF])
                   · have h_leaf : HuffmanTree.leaf (freqF us' c) c ∈ ts'' := by
-                      aesop(add norm[heightF,freq,height,alphabet, alphabetF,
+                      aesop(add norm[heightF, freq, height, alphabet, alphabetF,
                                       heightF_0_imp_Leaf_freqF_in_set])
                     have h_w := sortedByWeight_Cons_imp_forall_weight_ge tb ts''
                               (sortedByWeight_Cons_imp_sortedByWeight ta
@@ -82,9 +81,9 @@ theorem optimum_huffman {α : Type} [d : DecidableEq α] (ts : Forest α)
                       grind[height_0_imp_cachedWeight_eq_weight, weight]
                     grind[weight]
                 have h_b_alphabet_us': b ∉ alphabetF us' := by
-                  aesop(add norm[alphabet,alphabetF])
+                  aesop(add norm[alphabet, alphabetF])
                 aesop(add norm[consistentF, consistent, alphabet, alphabetF,
-                                consistent_huffman,huffman,freq,freqF])
+                                consistent_huffman, huffman, freq, freqF])
               simpa [e1, e2] using h_optimum_ts
             | node w t1 t2 => simp [heightF, height] at h_height
           | node w t1 t2 => simp [heightF, height] at h_height
